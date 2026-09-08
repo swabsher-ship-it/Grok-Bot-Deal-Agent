@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 
 const links = [
@@ -14,8 +15,14 @@ export default function ProspectFooter() {
   return (
     <footer className="border-t border-quelliv-border/80 bg-white">
       <div className="mx-auto flex max-w-6xl flex-col gap-6 px-6 py-10 md:flex-row md:items-center md:justify-between">
-        <Link href="/" className="font-brand text-[1.85rem] leading-none text-[#1a1a1a]">
-          Quelliv
+        <Link href="/" className="inline-flex items-center" aria-label="Quelliv home">
+          <Image
+            src="/images/quelliv-logo.png"
+            alt="Quelliv"
+            width={140}
+            height={36}
+            className="h-8 w-auto"
+          />
         </Link>
         <nav className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-[13px] text-quelliv-muted">
           {links.map((l) => (
