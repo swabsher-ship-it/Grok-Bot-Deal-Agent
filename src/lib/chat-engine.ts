@@ -2,6 +2,7 @@ import type { CampaignConfig, ConsentRecord, Lead, LeadState } from "./types";
 
 export type GateStep =
   | "consent"
+  | "interest"
   | "name"
   | "email"
   | "phone"
@@ -24,7 +25,7 @@ export interface GateSession {
 export function initialAssistantMessage(config: CampaignConfig): string {
   return (
     config.welcome ||
-    `Hi — I'm ${config.agentName}, Quelliv's in-room assistant and Data Room gatekeeper (Ask Alex). Before I unlock the Quelliv Investor Preview / Data Room, I'll need a few consents and your contact details.`
+    `Hi there! I'm ${config.agentName}, a friendly AI assistant from Quelliv. Thanks for your interest in learning more about us! I'd love to help you learn more about the opportunity and get you access to our investor materials. No pressure at all — are you interested in learning more?`
   );
 }
 
@@ -58,6 +59,33 @@ export function nextGateReply(
   }
 
   switch (session.step) {
+    case "interest": {
+      if (
+        lower.startsWith("y") ||
+        lower.includes("interest") ||
+        lower.includes("learn") ||
+        lower.includes("sure") ||
+        lower.includes("ok") ||
+        lower.includes("please")
+      ) {
+        return {
+          reply: "Great — what's your full name?",
+          session: { ...session, step: "name" },
+          leadPatch: { state: "Collect Name" as LeadState, status: "Engaged" },
+        };
+      }
+      if (text.length >= 2 && text.split(" ").length >= 2 && !lower.includes("?")) {
+        return {
+          reply: `Thanks, ${text.split(" ")[0]}. What's the best email for your Quelliv Investor Preview / Data Room access link?`,
+          session: { ...session, step: "email", name: text },
+          leadPatch: { name: text, state: "Collect Email" as LeadState, status: "Engaged" },
+        };
+      }
+      return {
+        reply: "No pressure at all. If you'd like to explore Quelliv's investor materials, just say yes and I'll get you set up. What's on your mind?",
+        session,
+      };
+    }
     case "consent": {
       if (lower === "yes" || lower.includes("accept") || lower.includes("agree")) {
         const next: GateSession = {

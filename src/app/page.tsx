@@ -1,99 +1,67 @@
-import Link from "next/link";
-import { Suspense } from "react";
-import PageviewTracker from "@/components/landing/PageviewTracker";
-import ChatWidget from "@/components/chat/ChatWidget";
-import { getStore } from "@/lib/store";
+"use client";
 
-export const dynamic = "force-dynamic";
+import { Suspense, useRef } from "react";
+import PageviewTracker from "@/components/landing/PageviewTracker";
+import ProspectHeader from "@/components/landing/ProspectHeader";
+import ProspectFooter from "@/components/landing/ProspectFooter";
+import ChatWidget, { type ChatWidgetHandle } from "@/components/chat/ChatWidget";
+
+const DISCLOSURE =
+  "DISCLOSURE: All information contained in this communication should not be considered investment advice nor an offer to buy or sell securities, and for informational purposes only. Investing in private or early-stage offerings involves a high degree of risk. Securities sold through these offerings are not (most of the time) publicly traded and, therefore, tend to be illiquid. Additionally, investors may receive restricted stock that is subject to holding period requirements. Companies seeking capital through these offerings tend to be in earlier stages of development and have not yet been fully tested in the public marketplace. Investing in private or early-stage offerings requires a tolerance for high risk, low liquidity, and a long-term commitment. Investors must be able to afford to lose their entire investment. Such investment products are not FDIC insured, may lose value, and have no bank guarantee.";
 
 export default function HomePage() {
-  const { config } = getStore();
-  const landing = config.landing;
+  const chatRef = useRef<ChatWidgetHandle>(null);
 
   return (
-    <main className="min-h-screen bg-deal-bg">
+    <main className="min-h-screen bg-white text-quelliv-navy">
       <Suspense fallback={null}>
         <PageviewTracker />
       </Suspense>
 
-      <header className="border-b border-deal-border/60 bg-[#0d101c]/90 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-          <div className="flex items-center gap-3">
-            <div className="h-8 w-8 rounded-lg bg-deal-accent/20 ring-1 ring-deal-accent/40" />
-            <div>
-              <div className="text-sm font-semibold tracking-wide text-white">Quelliv</div>
-              <div className="text-[11px] text-deal-muted">Struxurety DealAgent · Alex</div>
-            </div>
-          </div>
-          <div className="flex items-center gap-4 text-sm">
-            <Link href="/start" className="text-deal-muted hover:text-white">
-              Start
-            </Link>
-            <Link href="/admin" className="text-deal-muted hover:text-white">
-              Admin
-            </Link>
-            <Link
-              href="/start"
-              className="rounded-lg bg-deal-accent px-3 py-1.5 font-medium text-white hover:bg-violet-500"
-            >
-              {landing.ctaLabel}
-            </Link>
-          </div>
-        </div>
-      </header>
+      <ProspectHeader />
 
-      <section className="mx-auto max-w-6xl px-6 pb-16 pt-20">
-        <p className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-deal-accent">
-          Quelliv Data Room Gatekeeper
-        </p>
-        <h1 className="max-w-3xl text-4xl font-bold leading-tight text-white md:text-5xl">
-          {landing.heroTitle}
-        </h1>
-        <p className="mt-5 max-w-2xl text-lg text-deal-muted">{landing.heroSubtitle}</p>
-        <div className="mt-8 flex flex-wrap gap-3">
-          <Link
-            href="/start"
-            className="rounded-xl bg-deal-accent px-5 py-3 font-semibold text-white hover:bg-violet-500"
-          >
-            {landing.ctaLabel}
-          </Link>
-          <a
-            href={landing.socialX}
-            target="_blank"
-            rel="noreferrer"
-            className="rounded-xl border border-deal-border px-5 py-3 text-deal-muted hover:border-deal-accent hover:text-white"
-          >
-            Follow on X
-          </a>
-        </div>
-      </section>
-
-      <section className="mx-auto grid max-w-6xl gap-4 px-6 pb-20 md:grid-cols-3">
-        {landing.sections.map((s) => (
-          <div key={s.title} className="card">
-            <h3 className="mb-2 text-lg font-semibold text-white">{s.title}</h3>
-            <p className="text-sm leading-relaxed text-deal-muted">{s.body}</p>
-          </div>
-        ))}
-      </section>
-
-      <section className="border-t border-deal-border/60 bg-[#0d101c]">
-        <div className="mx-auto max-w-6xl px-6 py-10">
-          <h2 className="text-sm font-semibold uppercase tracking-wider text-deal-muted">
-            Securities disclosure
-          </h2>
-          <p className="mt-3 max-w-4xl text-sm leading-relaxed text-slate-300">
-            {config.disclaimer} This communication is informational only and does not constitute an
-            offer to sell or a solicitation of an offer to buy any securities. Any offering is made
-            solely by the Private Placement Memorandum and related subscription documents. Alex will
-            not invent investment returns, valuations, or allocations. Personalized securities
-            questions are escalated to Scott Absher and Mike Keyes.
+      <section className="hero-waves relative overflow-hidden px-6 pb-24 pt-28 md:pb-32 md:pt-36">
+        <div className="relative z-10 mx-auto max-w-4xl text-center">
+          <h1 className="text-[1.75rem] font-semibold uppercase tracking-[0.08em] text-quelliv-navy sm:text-3xl md:text-[2.65rem] md:leading-tight">
+            Explore an Investment in Quelliv
+          </h1>
+          <p className="mx-auto mt-6 max-w-2xl text-base font-light leading-relaxed text-quelliv-navy md:text-lg">
+            Thank you for your interest in Quelliv. We are anxious to meet you and introduce you to
+            what we are building and how you can be a part.
           </p>
-          <p className="mt-6 text-xs text-deal-muted">{landing.footer}</p>
         </div>
       </section>
 
-      <ChatWidget floating />
+      <section className="bg-quelliv-section px-6 py-20 md:py-24">
+        <div className="mx-auto max-w-2xl text-center">
+          <div className="mx-auto mb-6 h-[3px] w-12 rounded-full bg-quelliv-cta" />
+          <h2 className="text-xl font-semibold uppercase tracking-[0.1em] text-quelliv-navy md:text-2xl">
+            I&apos;d Like to Learn More
+          </h2>
+          <p className="mx-auto mt-5 max-w-xl text-[15px] font-light leading-relaxed text-quelliv-muted md:text-base">
+            Have questions about investing with Quelliv? Chat with Alex, our AI assistant, to learn
+            more about our investment opportunity, get answers to your questions, and receive access
+            to our investor data room.
+          </p>
+          <button
+            type="button"
+            onClick={() => chatRef.current?.open()}
+            className="mt-10 rounded-xl bg-quelliv-cta px-10 py-3.5 text-sm font-medium tracking-wide text-white shadow-cta transition hover:brightness-105"
+          >
+            Learn More
+          </button>
+        </div>
+      </section>
+
+      <section className="bg-white px-6 py-12">
+        <p className="mx-auto max-w-4xl text-center text-[12px] font-light leading-relaxed text-quelliv-muted">
+          {DISCLOSURE}
+        </p>
+      </section>
+
+      <ProspectFooter />
+
+      <ChatWidget ref={chatRef} floating />
     </main>
   );
 }

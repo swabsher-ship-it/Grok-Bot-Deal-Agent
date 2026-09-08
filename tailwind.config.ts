@@ -19,6 +19,22 @@ const config: Config = {
           red: "#ef4444",
           blue: "#3b82f6",
         },
+        quelliv: {
+          white: "#FFFFFF",
+          section: "#F0F4F8",
+          navy: "#0A2D61",
+          cta: "#709BFF",
+          muted: "#666666",
+          border: "#E2E8F0",
+        },
+      },
+      fontFamily: {
+        sans: ["var(--font-montserrat)", "Montserrat", "ui-sans-serif", "system-ui", "sans-serif"],
+        brand: ["var(--font-brand)", "Great Vibes", "cursive"],
+      },
+      boxShadow: {
+        cta: "0 8px 24px rgba(112, 155, 255, 0.35)",
+        panel: "0 20px 50px rgba(10, 45, 97, 0.18)",
       },
     },
   },

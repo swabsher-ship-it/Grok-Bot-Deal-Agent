@@ -1,6 +1,13 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import {
+  forwardRef,
+  useEffect,
+  useImperativeHandle,
+  useRef,
+  useState,
+} from "react";
+import Link from "next/link";
 import { MessageCircle, X, Send } from "lucide-react";
 import type { GateSession } from "@/lib/chat-engine";
 
@@ -10,161 +17,256 @@ interface Msg {
   content: string;
 }
 
-export default function ChatWidget({ floating = true }: { floating?: boolean }) {
-  const [open, setOpen] = useState(!floating);
-  const [messages, setMessages] = useState<Msg[]>([]);
-  const [input, setInput] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [conversationId, setConversationId] = useState<string | null>(null);
-  const [gate, setGate] = useState<GateSession>({ step: "consent" });
-  const [unlockedUrl, setUnlockedUrl] = useState<string | null>(null);
-  const bottomRef = useRef<HTMLDivElement>(null);
+export type ChatWidgetHandle = {
+  open: () => void;
+};
 
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, open]);
+type Phase = "idle" | "consent" | "connecting" | "chat";
 
-  async function startChat() {
-    setLoading(true);
-    try {
-      const sid = localStorage.getItem("dealagent_sid") || undefined;
-      const res = await fetch("/api/chat/start", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sessionId: sid, source: "landing_page" }),
-      });
-      const data = await res.json();
-      if (data.ok) {
-        setConversationId(data.conversationId);
-        setMessages(data.messages || []);
-        setGate(data.gate || { step: "consent" });
+const ChatWidget = forwardRef<ChatWidgetHandle, { floating?: boolean }>(
+  function ChatWidget({ floating = true }, ref) {
+    const [open, setOpen] = useState(!floating);
+    const [phase, setPhase] = useState<Phase>(!floating ? "consent" : "idle");
+    const [consentChecked, setConsentChecked] = useState(false);
+    const [messages, setMessages] = useState<Msg[]>([]);
+    const [input, setInput] = useState("");
+    const [loading, setLoading] = useState(false);
+    const [conversationId, setConversationId] = useState<string | null>(null);
+    const [gate, setGate] = useState<GateSession>({ step: "interest" });
+    const [unlockedUrl, setUnlockedUrl] = useState<string | null>(null);
+    const bottomRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+      bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    }, [messages, open, phase]);
+
+    useEffect(() => {
+      if (!floating && phase === "idle") setPhase("consent");
+    }, [floating, phase]);
+
+    function openPanel() {
+      setOpen(true);
+      if (phase === "idle" || (!conversationId && phase !== "connecting" && phase !== "chat")) {
+        setPhase("consent");
       }
-    } finally {
-      setLoading(false);
     }
-  }
 
-  async function send() {
-    if (!input.trim() || !conversationId || loading) return;
-    const text = input.trim();
-    setInput("");
-    setLoading(true);
-    setMessages((m) => [...m, { id: `local_${Date.now()}`, role: "user", content: text }]);
-    try {
-      const res = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ conversationId, message: text, gate }),
-      });
-      const data = await res.json();
-      if (data.ok) {
-        setMessages(data.messages || []);
-        setGate(data.gate || gate);
-        if (data.unlocked && data.dataRoomUrl) setUnlockedUrl(data.dataRoomUrl);
+    useImperativeHandle(ref, () => ({ open: openPanel }));
+
+    async function startChat() {
+      if (!consentChecked || loading) return;
+      setPhase("connecting");
+      setLoading(true);
+      try {
+        const sid = localStorage.getItem("dealagent_sid") || undefined;
+        const res = await fetch("/api/chat/start", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            sessionId: sid,
+            source: "landing_page",
+            aiConsent: true,
+          }),
+        });
+        const data = await res.json();
+        if (data.ok) {
+          if (data.sessionId) localStorage.setItem("dealagent_sid", data.sessionId);
+          setConversationId(data.conversationId);
+          setMessages(data.messages || []);
+          setGate(data.gate || { step: "interest" });
+          setPhase("chat");
+        } else {
+          setPhase("consent");
+        }
+      } catch {
+        setPhase("consent");
+      } finally {
+        setLoading(false);
       }
-    } finally {
-      setLoading(false);
     }
-  }
 
-  function handleOpen() {
-    setOpen(true);
-    if (!conversationId) startChat();
-  }
+    async function send() {
+      if (!input.trim() || !conversationId || loading) return;
+      const text = input.trim();
+      setInput("");
+      setLoading(true);
+      setMessages((m) => [...m, { id: `local_${Date.now()}`, role: "user", content: text }]);
+      try {
+        const res = await fetch("/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ conversationId, message: text, gate }),
+        });
+        const data = await res.json();
+        if (data.ok) {
+          setMessages(data.messages || []);
+          setGate(data.gate || gate);
+          if (data.unlocked && data.dataRoomUrl) setUnlockedUrl(data.dataRoomUrl);
+        }
+      } finally {
+        setLoading(false);
+      }
+    }
 
-  const panel = (
-    <div
-      className={`flex flex-col overflow-hidden rounded-2xl border border-deal-border bg-deal-card shadow-2xl ${
-        floating ? "h-[520px] w-[380px]" : "h-[70vh] w-full max-w-2xl"
-      }`}
-    >
-      <div className="flex items-center justify-between border-b border-deal-border bg-[#12172a] px-4 py-3">
-        <div>
-          <div className="font-semibold text-white">Ask Alex · In-room + Gatekeeper</div>
-          <div className="text-xs text-deal-muted">Quelliv Investor Preview / Data Room</div>
-        </div>
-        {floating && (
-          <button onClick={() => setOpen(false)} className="text-deal-muted hover:text-white">
-            <X size={18} />
-          </button>
-        )}
-      </div>
-      <div className="flex-1 space-y-3 overflow-y-auto p-4">
-        {!conversationId && (
-          <div className="rounded-lg bg-[#1a2035] p-3 text-sm text-deal-muted">
-            Ask Alex to begin the Quelliv Data Room gate (consent → identity → Investor Preview unlock).
+    const panel = (
+      <div
+        className={`flex flex-col overflow-hidden rounded-2xl border border-quelliv-border bg-white shadow-panel ${
+          floating ? "h-[560px] w-[380px] max-w-[calc(100vw-2rem)]" : "h-[70vh] w-full max-w-2xl"
+        }`}
+      >
+        <div className="flex items-center justify-between border-b border-quelliv-border px-4 py-3">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-quelliv-cta text-sm font-semibold text-white">
+              A
+            </div>
+            <div>
+              <div className="text-[15px] font-semibold text-quelliv-navy">Alex</div>
+              <div className="text-xs font-light text-quelliv-muted">Quelliv AI Assistant</div>
+            </div>
+          </div>
+          {floating && (
             <button
-              onClick={startChat}
-              disabled={loading}
-              className="mt-3 block w-full rounded-lg bg-deal-accent px-3 py-2 text-sm font-medium text-white hover:bg-violet-500"
+              type="button"
+              onClick={() => setOpen(false)}
+              className="rounded-md p-1 text-quelliv-muted hover:bg-quelliv-section hover:text-quelliv-navy"
+              aria-label="Close chat"
             >
-              {loading ? "Starting…" : "Ask Alex"}
+              <X size={18} />
+            </button>
+          )}
+        </div>
+
+        {phase === "consent" && (
+          <div className="flex flex-1 flex-col items-center justify-center gap-4 px-6 py-8 text-center">
+            <div className="flex h-16 w-16 items-center justify-center rounded-full border-2 border-quelliv-cta text-quelliv-cta">
+              <MessageCircle size={28} strokeWidth={1.5} />
+            </div>
+            <h3 className="text-lg font-semibold text-quelliv-navy">
+              Chat with Quelliv&apos;s AI Assistant
+            </h3>
+            <p className="text-sm font-light leading-relaxed text-quelliv-muted">
+              This is an AI-powered assistant. By continuing, you consent to receive AI-assisted
+              communications about investment opportunities from Quelliv. This is not financial
+              advice. All investments carry risk.
+            </p>
+            <label className="flex cursor-pointer items-start gap-3 rounded-xl bg-quelliv-section/80 px-3 py-3 text-left text-[13px] font-light leading-snug text-quelliv-muted">
+              <input
+                type="checkbox"
+                checked={consentChecked}
+                onChange={(e) => setConsentChecked(e.target.checked)}
+                className="mt-0.5 h-4 w-4 shrink-0 rounded border-quelliv-border accent-quelliv-cta"
+              />
+              <span>
+                I consent to receive AI-assisted communications about investment opportunities from
+                Quelliv. By continuing, I agree to the{" "}
+                <Link href="/terms" className="font-medium text-quelliv-cta underline">
+                  Terms of Service
+                </Link>{" "}
+                and{" "}
+                <Link href="/privacy" className="font-medium text-quelliv-cta underline">
+                  Privacy Policy
+                </Link>
+                .
+              </span>
+            </label>
+            <button
+              type="button"
+              onClick={startChat}
+              disabled={!consentChecked || loading}
+              className="mt-2 w-full rounded-xl bg-quelliv-cta py-3 text-sm font-medium text-white shadow-cta transition disabled:cursor-not-allowed disabled:bg-[#c5d6ff] disabled:shadow-none"
+            >
+              Start Chat
             </button>
           </div>
         )}
-        {messages.map((m) => (
-          <div
-            key={m.id}
-            className={`max-w-[90%] whitespace-pre-wrap rounded-2xl px-3 py-2 text-sm ${
-              m.role === "user"
-                ? "ml-auto bg-deal-accent text-white"
-                : "bg-[#1a2035] text-slate-100"
-            }`}
-          >
-            {m.content}
+
+        {phase === "connecting" && (
+          <div className="flex flex-1 flex-col items-center justify-center gap-3 px-6 text-center">
+            <div className="h-10 w-10 animate-pulse rounded-full bg-quelliv-cta/30" />
+            <p className="text-sm font-light text-quelliv-muted">Connecting to Alex…</p>
           </div>
-        ))}
-        {unlockedUrl && (
-          <a
-            href={unlockedUrl}
-            target="_blank"
-            rel="noreferrer"
-            className="block rounded-lg border border-deal-green/40 bg-deal-green/10 px-3 py-2 text-sm text-deal-green"
-          >
-            Open Quelliv Investor Preview / Data Room →
-          </a>
         )}
-        <div ref={bottomRef} />
+
+        {phase === "chat" && (
+          <>
+            <div className="flex-1 space-y-4 overflow-y-auto px-4 py-4">
+              {messages.map((m) => (
+                <div
+                  key={m.id}
+                  className={`flex gap-2 ${m.role === "user" ? "justify-end" : "justify-start"}`}
+                >
+                  {m.role !== "user" && (
+                    <div className="mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#9aa8bc] text-[11px] font-semibold text-white">
+                      A
+                    </div>
+                  )}
+                  <div
+                    className={`max-w-[82%] whitespace-pre-wrap rounded-2xl px-3.5 py-2.5 text-sm font-light leading-relaxed ${
+                      m.role === "user"
+                        ? "bg-quelliv-cta text-white"
+                        : "bg-[#EEF1F5] text-[#333333]"
+                    }`}
+                  >
+                    {m.content}
+                  </div>
+                </div>
+              ))}
+              {unlockedUrl && (
+                <a
+                  href={unlockedUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="ml-9 block rounded-xl border border-quelliv-cta/40 bg-quelliv-cta/10 px-3 py-2.5 text-sm font-medium text-quelliv-navy hover:bg-quelliv-cta/15"
+                >
+                  Open Quelliv Investor Preview / Data Room →
+                </a>
+              )}
+              <div ref={bottomRef} />
+            </div>
+            <div className="border-t border-quelliv-border p-3">
+              <div className="flex items-center gap-2">
+                <input
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && send()}
+                  placeholder="Type a message…"
+                  disabled={loading}
+                  className="flex-1 rounded-xl border border-[#c5d6f0] bg-white px-3.5 py-2.5 text-sm text-quelliv-navy outline-none placeholder:text-quelliv-muted/70 focus:border-quelliv-cta"
+                />
+                <button
+                  type="button"
+                  onClick={send}
+                  disabled={loading || !input.trim()}
+                  className="flex h-10 w-10 items-center justify-center rounded-full bg-quelliv-cta text-white disabled:opacity-40"
+                  aria-label="Send"
+                >
+                  <Send size={16} />
+                </button>
+              </div>
+            </div>
+          </>
+        )}
       </div>
-      <div className="border-t border-deal-border p-3">
-        <div className="flex gap-2">
-          <input
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && send()}
-            placeholder={conversationId ? "Type a message…" : "Start chat first"}
-            disabled={!conversationId || loading}
-            className="flex-1 rounded-lg border border-deal-border bg-[#0f1322] px-3 py-2 text-sm outline-none focus:border-deal-accent"
-          />
+    );
+
+    if (!floating) return panel;
+
+    return (
+      <div className="fixed bottom-5 right-5 z-50 flex flex-col items-end gap-3">
+        {open && panel}
+        {!open && (
           <button
-            onClick={send}
-            disabled={!conversationId || loading}
-            className="rounded-lg bg-deal-accent px-3 py-2 text-white disabled:opacity-40"
+            type="button"
+            onClick={openPanel}
+            className="flex h-14 w-14 items-center justify-center rounded-full bg-quelliv-cta text-white shadow-cta transition hover:brightness-105"
+            aria-label="Chat with Alex"
           >
-            <Send size={16} />
+            <MessageCircle size={24} />
           </button>
-        </div>
-        <p className="mt-2 text-[10px] text-deal-muted">
-          Informational only — not an offer to buy or sell securities. Alex will not invent returns.
-        </p>
+        )}
       </div>
-    </div>
-  );
+    );
+  }
+);
 
-  if (!floating) return panel;
-
-  return (
-    <div className="fixed bottom-5 right-5 z-50 flex flex-col items-end gap-3">
-      {open && panel}
-      {!open && (
-        <button
-          onClick={handleOpen}
-          className="flex items-center gap-2 rounded-full bg-deal-accent px-4 py-3 font-medium text-white shadow-lg hover:bg-violet-500"
-        >
-          <MessageCircle size={18} />
-          Ask Alex
-        </button>
-      )}
-    </div>
-  );
-}
+export default ChatWidget;

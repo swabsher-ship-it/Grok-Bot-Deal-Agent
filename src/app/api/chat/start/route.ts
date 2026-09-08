@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getStore, saveStore, appendLog } from "@/lib/store";
 import { uid, nowISO, parseUTM } from "@/lib/utils";
 import { consentPrompt, initialAssistantMessage } from "@/lib/chat-engine";
-import type { DeviceType, Region, LeadSource } from "@/lib/types";
+import type { ConsentRecord, DeviceType, Region, LeadSource } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
@@ -19,7 +19,21 @@ export async function POST(req: NextRequest) {
     const createdAt = nowISO();
 
     const welcome = initialAssistantMessage(store.config);
+    const uiConsent = Boolean(body.aiConsent);
     const consent = consentPrompt();
+    const gateStep = uiConsent ? "interest" : "consent";
+
+    const consents: ConsentRecord | undefined = uiConsent
+      ? {
+          accreditedAck: false,
+          confidentialityAck: false,
+          electronicDeliveryAck: true,
+          aiDisclosureAck: true,
+          securitiesAck: true,
+          smsConsent: false,
+          consentedAt: createdAt,
+        }
+      : undefined;
 
     store.leads.unshift({
       id: leadId,
@@ -37,7 +51,15 @@ export async function POST(req: NextRequest) {
       updatedAt: createdAt,
       utm,
       conversationId: convId,
+      consents,
     });
+
+    const messages = uiConsent
+      ? [{ id: uid("msg"), role: "assistant" as const, content: welcome, createdAt }]
+      : [
+          { id: uid("msg"), role: "assistant" as const, content: welcome, createdAt },
+          { id: uid("msg"), role: "assistant" as const, content: consent, createdAt },
+        ];
 
     store.conversations.unshift({
       id: convId,
@@ -45,10 +67,7 @@ export async function POST(req: NextRequest) {
       leadName: "Anonymous",
       leadPhone: "",
       mode: "AI Active",
-      messages: [
-        { id: uid("msg"), role: "assistant", content: welcome, createdAt },
-        { id: uid("msg"), role: "assistant", content: consent, createdAt },
-      ],
+      messages,
       createdAt,
       updatedAt: createdAt,
     });
@@ -68,7 +87,7 @@ export async function POST(req: NextRequest) {
       leadId,
       conversationId: convId,
       sessionId,
-      gate: { step: "consent" },
+      gate: { step: gateStep, consents },
       messages: store.conversations[0].messages,
     });
   } catch {

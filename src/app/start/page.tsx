@@ -1,46 +1,39 @@
-import Link from "next/link";
-import { Suspense } from "react";
-import PageviewTracker from "@/components/landing/PageviewTracker";
-import ChatWidget from "@/components/chat/ChatWidget";
-import { getStore } from "@/lib/store";
+"use client";
 
-export const dynamic = "force-dynamic";
+import { Suspense, useEffect, useRef } from "react";
+import PageviewTracker from "@/components/landing/PageviewTracker";
+import ProspectHeader from "@/components/landing/ProspectHeader";
+import ProspectFooter from "@/components/landing/ProspectFooter";
+import ChatWidget, { type ChatWidgetHandle } from "@/components/chat/ChatWidget";
 
 export default function StartPage() {
-  const { config } = getStore();
+  const chatRef = useRef<ChatWidgetHandle>(null);
+
+  useEffect(() => {
+    chatRef.current?.open();
+  }, []);
 
   return (
-    <main className="min-h-screen bg-deal-bg">
+    <main className="min-h-screen bg-white text-quelliv-navy">
       <Suspense fallback={null}>
         <PageviewTracker />
       </Suspense>
-      <header className="border-b border-deal-border/60">
-        <div className="mx-auto flex max-w-4xl items-center justify-between px-6 py-4">
-          <Link href="/" className="text-sm text-deal-muted hover:text-white">
-            ← Quelliv
-          </Link>
-          <div className="text-sm font-medium text-white">
-            {config.agentName} · Data Room Gate
-          </div>
-          <Link href="/admin" className="text-sm text-deal-muted hover:text-white">
-            Admin
-          </Link>
-        </div>
-      </header>
-
-      <div className="mx-auto flex max-w-4xl flex-col items-center gap-8 px-6 py-10">
-        <div className="w-full text-center">
-          <h1 className="text-3xl font-bold text-white">Ask {config.agentName}</h1>
-          <p className="mt-2 text-deal-muted">
-            Consent → name → email → phone → SMS consent → confirm → Quelliv Investor Preview / Data Room unlock
+      <ProspectHeader />
+      <section className="bg-quelliv-section px-6 py-16 md:py-20">
+        <div className="mx-auto max-w-2xl text-center">
+          <div className="mx-auto mb-6 h-[3px] w-12 rounded-full bg-quelliv-cta" />
+          <h1 className="text-xl font-semibold uppercase tracking-[0.1em] text-quelliv-navy md:text-2xl">
+            I&apos;d Like to Learn More
+          </h1>
+          <p className="mx-auto mt-5 max-w-xl text-[15px] font-light leading-relaxed text-quelliv-muted">
+            Chat with Alex to learn more about Quelliv and unlock access to our investor data room.
           </p>
         </div>
-        <ChatWidget floating={false} />
-        <p className="max-w-2xl text-center text-xs text-deal-muted">
-          {config.disclaimer} Placeholder consent language is marked [GATED — counsel] pending final
-          legal copy.
-        </p>
+      </section>
+      <div className="mx-auto flex max-w-2xl justify-center px-6 py-10">
+        <ChatWidget ref={chatRef} floating={false} />
       </div>
+      <ProspectFooter />
     </main>
   );
 }

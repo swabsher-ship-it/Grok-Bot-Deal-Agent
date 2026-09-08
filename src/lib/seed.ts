@@ -352,7 +352,7 @@ export function buildSeedData(): StoreData {
     campaign: "Quelliv",
     agentName: "Alex",
     welcome:
-      "Hi — I'm Alex, Quelliv's in-room assistant and Data Room gatekeeper. I unlock the Quelliv Investor Preview / Data Room after a short gate, then stay with you for document questions (Ask Alex — formerly Ask Vox).",
+      "Hi there! I'm Alex, a friendly AI assistant from Quelliv. Thanks for your interest in learning more about us! I'd love to help you learn more about the opportunity and get you access to our investor materials. No pressure at all — are you interested in learning more?",
     persona:
       "Alex is Quelliv's in-room assistant and Data Room gatekeeper (Ask Alex — replaces Ask Vox). After gate pass he unlocks the live Quelliv Investor Preview / Data Room at https://v.quelliv.com/invest/989178b76cc2f3f0d734914f (video investor + Access Data Room / Book Conversation). Professional, clear, compliance-first. Never invents returns, valuations, or terms. Escalates securities questions to Scott Absher and Mike Keyes.",
     conversationGuidance:
@@ -373,29 +373,20 @@ export function buildSeedData(): StoreData {
       "Informational only — not an offer to buy or sell securities. All offering terms are solely as set forth in the PPM and subscription documents. Past performance or illustrative models are not guarantees.",
     dataRoomUrl: "https://v.quelliv.com/invest/989178b76cc2f3f0d734914f",
     videoUrl: "",
-    colors: { primary: "#0b0d17", accent: "#8b5cf6" },
+    colors: { primary: "#0A2D61", accent: "#709BFF" },
     landing: {
-      heroTitle: "Quelliv Investor Preview / Data Room",
+      heroTitle: "EXPLORE AN INVESTMENT IN QUELLIV",
       heroSubtitle:
-        "Ask Alex — Quelliv's in-room assistant and Data Room gatekeeper. He unlocks the live Investor Preview (video investor + Access Data Room / Book Conversation) after a short gate, then guides the packet.",
-      ctaLabel: "Ask Alex",
+        "Thank you for your interest in Quelliv. We are anxious to meet you and introduce you to what we are building and how you can be a part.",
+      ctaLabel: "Learn More",
       sections: [
         {
-          title: "Ask Alex in-room",
-          body: "Alex is the in-room assistant (Ask Alex, not Ask Vox): deck, model, PPM, subscription, and recommended review order — without inventing terms.",
-        },
-        {
-          title: "Access gate",
-          body: "Name, email, mobile, and required permissions are captured before Alex unlocks the Quelliv Investor Preview / Data Room.",
-        },
-        {
-          title: "Human escalation",
-          body: "Accreditation, allocation, wire, and personalized return questions route to Scott Absher and Mike Keyes.",
+          title: "I'D LIKE TO LEARN MORE",
+          body: "Have questions about investing with Quelliv? Chat with Alex, our AI assistant, to learn more about our investment opportunity, get answers to your questions, and receive access to our investor data room.",
         },
       ],
       socialX: "https://x.com/quelliv",
-      footer:
-        "© Quelliv · Struxurety DealAgent · Securities offered only by prospectus/PPM where applicable. Not investment advice.",
+      footer: "© Quelliv. All rights reserved.",
     },
     escalation: {
       email: "scott.absher@quelliv.com",
