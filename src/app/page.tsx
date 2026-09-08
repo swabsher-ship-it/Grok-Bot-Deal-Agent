@@ -44,7 +44,7 @@ export default function HomePage() {
 
       <section className="mx-auto max-w-6xl px-6 pb-16 pt-20">
         <p className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-deal-accent">
-          Investor Data Room
+          Quelliv Data Room Gatekeeper
         </p>
         <h1 className="max-w-3xl text-4xl font-bold leading-tight text-white md:text-5xl">
           {landing.heroTitle}

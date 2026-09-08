@@ -24,7 +24,7 @@ export interface GateSession {
 export function initialAssistantMessage(config: CampaignConfig): string {
   return (
     config.welcome ||
-    `Hi — I'm ${config.agentName}, Quelliv's Deal Agent. Before I unlock the Investor Data Room, I'll need a few consents and your contact details.`
+    `Hi — I'm ${config.agentName}, Quelliv's in-room assistant and Data Room gatekeeper (Ask Alex). Before I unlock the Quelliv Investor Preview / Data Room, I'll need a few consents and your contact details.`
   );
 }
 
@@ -52,7 +52,7 @@ export function nextGateReply(
 
   if (looksLikeSecuritiesAdvice(lower)) {
     return {
-      reply: `I can't provide personalized investment advice, returns, valuations, or allocation guidance. Please book time with Scott Absher or Mike Keyes (${config.escalation.email}). I can still help you unlock the data room and orient you to the document packet.`,
+      reply: `I can't provide personalized investment advice, returns, valuations, or allocation guidance. Please book time with Scott Absher or Mike Keyes (${config.escalation.email}). I can still help you unlock the Quelliv Investor Preview / Data Room and orient you to the document packet.`,
       session,
     };
   }
@@ -89,7 +89,7 @@ export function nextGateReply(
         return { reply: "Please share your full name so I can set up your access.", session };
       }
       return {
-        reply: `Thanks, ${text.split(" ")[0]}. What's the best email for your data-room access link?`,
+        reply: `Thanks, ${text.split(" ")[0]}. What's the best email for your Quelliv Investor Preview / Data Room access link?`,
         session: { ...session, step: "email", name: text },
         leadPatch: { name: text, state: "Collect Email" },
       };
@@ -125,7 +125,7 @@ export function nextGateReply(
         `• Phone: ${session.phone}`,
         `• SMS consent: ${sms ? "Yes" : "No"}`,
         "",
-        "Reply CONFIRM to unlock the Investor Data Room, or tell me what to correct.",
+        "Reply CONFIRM to unlock the Quelliv Investor Preview / Data Room, or tell me what to correct.",
       ].join("\n");
       return {
         reply: summary,
@@ -142,9 +142,9 @@ export function nextGateReply(
         const unlocked: GateSession = { ...session, step: "unlocked", unlocked: true };
         return {
           reply: [
-            `You're all set. I'm unlocking the Quelliv Investor Data Room now.`,
+            `You're all set. I'm unlocking the Quelliv Investor Preview / Data Room now.`,
             "",
-            `Data room: ${config.dataRoomUrl}`,
+            `Investor Preview / Data Room: ${config.dataRoomUrl}`,
             "",
             `You can ask me about the deck, model, PPM, subscription agreement, or recommended review order. I will not invent terms, returns, or valuations — those live in the official documents. For personalized questions, contact Scott Absher / Mike Keyes.`,
           ].join("\n"),
@@ -220,10 +220,10 @@ function answerKnowledge(lower: string, config: CampaignConfig): string {
     return "The financial model is for diligence orientation only. I won't invent or guarantee returns from it. Treat figures as illustrative and defer to the PPM for offering terms.";
   }
   if (lower.includes("room") || lower.includes("link") || lower.includes("access")) {
-    return `Your data-room link: ${config.dataRoomUrl}. Ask me about any document category in the packet.`;
+    return `Your Quelliv Investor Preview / Data Room link: ${config.dataRoomUrl}. Ask me about any document category in the packet.`;
   }
   if (lower.includes("book") || lower.includes("scott") || lower.includes("mike") || lower.includes("meeting")) {
     return `For meetings with Scott Absher or Mike Keyes, use the book path on Quelliv (meet.quelliv.com) or email ${config.escalation.email}.`;
   }
-  return `I'm ${config.agentName}. I can help with data-room orientation (deck, model, PPM, subscription, warrants, notices) and process questions. I don't invent investment returns or terms. What would you like to know?`;
+  return `I'm ${config.agentName} — Ask Alex, Quelliv's in-room assistant and Data Room gatekeeper. I can help with Investor Preview / Data Room orientation (deck, model, PPM, subscription, warrants, notices) and process questions. I don't invent investment returns or terms. What would you like to know?`;
 }

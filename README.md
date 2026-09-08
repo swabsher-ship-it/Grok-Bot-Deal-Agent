@@ -1,6 +1,19 @@
 # Grok-Bot-Deal-Agent (Struxurety DealAgent v2)
 
-Next.js App Router + TypeScript + Tailwind. Org Struxurety, campaign Quelliv, agent Alex.
+Next.js App Router + TypeScript + Tailwind. Org **Struxurety**, campaign **Quelliv**, agent **Alex**.
+
+**Ask Alex** is Quelliv's **in-room assistant and Data Room gatekeeper** (replaces legacy **Ask Vox** labeling). After consents and identity, Alex unlocks the live Quelliv Investor Preview / Data Room (video investor + Access Data Room / Book Conversation), then stays available for packet orientation.
+
+## Dual-link framing
+
+| Role | URL |
+|------|-----|
+| **Alex gate / Ask Alex** (this app) | Deployed Deal Agent landing + `/start` chat gate |
+| **Quelliv Investor Preview / Data Room** (unlock target) | https://v.quelliv.com/invest/989178b76cc2f3f0d734914f |
+
+Canonical `config.dataRoomUrl` (seed default): `https://v.quelliv.com/invest/989178b76cc2f3f0d734914f`
+
+Landing CTA: **Ask Alex**
 
 ## Quick start
 Use package.json scripts: install, build, then dev. Open localhost:3000

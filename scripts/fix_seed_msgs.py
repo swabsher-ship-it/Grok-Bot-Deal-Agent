@@ -11,7 +11,7 @@ old = """    const msgs = [
       {
         id: `msg_${lead.id}_1`,
         role: "assistant" as const,
-        content: `Hi — I'm Alex, Quelliv's Deal Agent. I can help you access the Investor Data Room once we capture your details and consents.`,
+        content: `Hi — I'm Alex, Quelliv's Data Room gatekeeper. I unlock the Quelliv Investor Preview / Data Room once we capture your details and consents.`,
         createdAt: lead.createdAt,
       },
     ];"""
@@ -19,7 +19,7 @@ new = """    const msgs: ChatMessage[] = [
       {
         id: `msg_${lead.id}_1`,
         role: "assistant",
-        content: `Hi — I'm Alex, Quelliv's Deal Agent. I can help you access the Investor Data Room once we capture your details and consents.`,
+        content: `Hi — I'm Alex, Quelliv's Data Room gatekeeper. I unlock the Quelliv Investor Preview / Data Room once we capture your details and consents.`,
         createdAt: lead.createdAt,
       },
     ];"""

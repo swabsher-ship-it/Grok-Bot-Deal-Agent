@@ -80,8 +80,8 @@ export default function ChatWidget({ floating = true }: { floating?: boolean }) 
     >
       <div className="flex items-center justify-between border-b border-deal-border bg-[#12172a] px-4 py-3">
         <div>
-          <div className="font-semibold text-white">Alex · Deal Agent</div>
-          <div className="text-xs text-deal-muted">Quelliv Investor Data Room</div>
+          <div className="font-semibold text-white">Ask Alex · In-room + Gatekeeper</div>
+          <div className="text-xs text-deal-muted">Quelliv Investor Preview / Data Room</div>
         </div>
         {floating && (
           <button onClick={() => setOpen(false)} className="text-deal-muted hover:text-white">
@@ -92,13 +92,13 @@ export default function ChatWidget({ floating = true }: { floating?: boolean }) 
       <div className="flex-1 space-y-3 overflow-y-auto p-4">
         {!conversationId && (
           <div className="rounded-lg bg-[#1a2035] p-3 text-sm text-deal-muted">
-            Start a conversation with Alex to begin the access gate (consent → identity → unlock).
+            Ask Alex to begin the Quelliv Data Room gate (consent → identity → Investor Preview unlock).
             <button
               onClick={startChat}
               disabled={loading}
               className="mt-3 block w-full rounded-lg bg-deal-accent px-3 py-2 text-sm font-medium text-white hover:bg-violet-500"
             >
-              {loading ? "Starting…" : "Start Chat"}
+              {loading ? "Starting…" : "Ask Alex"}
             </button>
           </div>
         )}
@@ -121,7 +121,7 @@ export default function ChatWidget({ floating = true }: { floating?: boolean }) 
             rel="noreferrer"
             className="block rounded-lg border border-deal-green/40 bg-deal-green/10 px-3 py-2 text-sm text-deal-green"
           >
-            Open Investor Data Room →
+            Open Quelliv Investor Preview / Data Room →
           </a>
         )}
         <div ref={bottomRef} />
@@ -162,7 +162,7 @@ export default function ChatWidget({ floating = true }: { floating?: boolean }) 
           className="flex items-center gap-2 rounded-full bg-deal-accent px-4 py-3 font-medium text-white shadow-lg hover:bg-violet-500"
         >
           <MessageCircle size={18} />
-          Chat with Alex
+          Ask Alex
         </button>
       )}
     </div>

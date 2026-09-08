@@ -20,7 +20,7 @@ export default function StartPage() {
             ← Quelliv
           </Link>
           <div className="text-sm font-medium text-white">
-            {config.agentName} · Access Gate
+            {config.agentName} · Data Room Gate
           </div>
           <Link href="/admin" className="text-sm text-deal-muted hover:text-white">
             Admin
@@ -30,9 +30,9 @@ export default function StartPage() {
 
       <div className="mx-auto flex max-w-4xl flex-col items-center gap-8 px-6 py-10">
         <div className="w-full text-center">
-          <h1 className="text-3xl font-bold text-white">Start with {config.agentName}</h1>
+          <h1 className="text-3xl font-bold text-white">Ask {config.agentName}</h1>
           <p className="mt-2 text-deal-muted">
-            Consent → name → email → phone → SMS consent → confirm → data-room unlock
+            Consent → name → email → phone → SMS consent → confirm → Quelliv Investor Preview / Data Room unlock
           </p>
         </div>
         <ChatWidget floating={false} />

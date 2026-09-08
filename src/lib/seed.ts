@@ -189,7 +189,7 @@ export function buildSeedData(): StoreData {
       {
         id: `msg_${lead.id}_1`,
         role: "assistant",
-        content: `Hi — I'm Alex, Quelliv's Deal Agent. I can help you access the Investor Data Room once we capture your details and consents.`,
+        content: `Hi — I'm Alex, Quelliv's in-room assistant and Data Room gatekeeper (Ask Alex). I unlock the Quelliv Investor Preview / Data Room once we capture your details and consents.`,
         createdAt: lead.createdAt,
       },
     ];
@@ -203,7 +203,7 @@ export function buildSeedData(): StoreData {
       msgs.push({
         id: `msg_${lead.id}_3`,
         role: "assistant",
-        content: `Thanks, ${lead.name.split(" ")[0]}. What's the best email to send your data-room access link?`,
+        content: `Thanks, ${lead.name.split(" ")[0]}. What's the best email for your Quelliv Investor Preview / Data Room access link?`,
         createdAt: lead.createdAt,
       });
       if (lead.status === "Docs Sent" || lead.status === "Engaged") {
@@ -224,7 +224,7 @@ export function buildSeedData(): StoreData {
           content:
             m % 2 === 0
               ? "Looking forward to reviewing the materials."
-              : "Your private data-room link is ready. Ask me about the deck, model, PPM, or subscription process — I won't invent terms or returns.",
+              : "Your Quelliv Investor Preview / Data Room link is ready. Ask me about the deck, model, PPM, or subscription process — I won't invent terms or returns.",
           createdAt: lead.createdAt,
         });
       }
@@ -248,8 +248,8 @@ export function buildSeedData(): StoreData {
     leadName: l.name,
     channel: i % 5 === 0 ? ("SMS" as const) : ("EMAIL" as const),
     to: i % 5 === 0 ? l.phone : l.email,
-    subject: "Your Quelliv Investor Data Room Access",
-    preview: `Hi ${l.name.split(" ")[0]}, Thanks for your interest in Quelliv! Here's your private link...`,
+    subject: "Your Quelliv Investor Preview / Data Room Access",
+    preview: `Hi ${l.name.split(" ")[0]}, Thanks for your interest in Quelliv! Here's your Investor Preview / Data Room link...`,
     status: "sent" as const,
     createdAt: l.updatedAt,
   }));
@@ -335,7 +335,7 @@ export function buildSeedData(): StoreData {
       id: "log_4",
       category: "email",
       severity: "info",
-      message: "Data room access email queued",
+      message: "Investor Preview / Data Room access email queued",
       createdAt: isoDaysAgo(2),
     },
     {
@@ -352,41 +352,41 @@ export function buildSeedData(): StoreData {
     campaign: "Quelliv",
     agentName: "Alex",
     welcome:
-      "Hi — I'm Alex, Quelliv's Deal Agent. I help accredited investors access the Investor Data Room and understand the document packet.",
+      "Hi — I'm Alex, Quelliv's in-room assistant and Data Room gatekeeper. I unlock the Quelliv Investor Preview / Data Room after a short gate, then stay with you for document questions (Ask Alex — formerly Ask Vox).",
     persona:
-      "Alex is the Quelliv Investor Data Room gatekeeper and document guide for Struxurety's Quelliv campaign. Professional, clear, compliance-first. Never invents returns, valuations, or terms. Escalates securities questions to Scott Absher and Mike Keyes.",
+      "Alex is Quelliv's in-room assistant and Data Room gatekeeper (Ask Alex — replaces Ask Vox). After gate pass he unlocks the live Quelliv Investor Preview / Data Room at https://v.quelliv.com/invest/989178b76cc2f3f0d734914f (video investor + Access Data Room / Book Conversation). Professional, clear, compliance-first. Never invents returns, valuations, or terms. Escalates securities questions to Scott Absher and Mike Keyes.",
     conversationGuidance:
-      "Capture consents and identity before unlocking the data room. Explain deck → model overview → PPM → subscription order at a high level. Do not improvise legal effect. Collect SMS consent OK. Do NOT send SMS — SMS_OUTBOUND_ENABLED=false (Usa2p campaign FAILED 30896). Email-only for data-room delivery until campaign VERIFIED on MS MGefe912.",
+      "Capture consents and identity before unlocking the Quelliv Investor Preview / Data Room (v.quelliv.com/invest/…). Explain deck → model overview → PPM → subscription order at a high level. Do not improvise legal effect. Collect SMS consent OK. Do NOT send SMS — SMS_OUTBOUND_ENABLED=false (Usa2p campaign FAILED 30896). Email-only for Investor Preview / Data Room delivery until campaign VERIFIED on MS MGefe912.",
     stateGoals: {
       "Interest Check": "Confirm investor interest in Quelliv materials",
       "Collect Name": "Capture full legal/contact name",
       "Collect Email": "Capture primary email",
       "Collect Phone": "Capture mobile phone (E.164 preferred)",
       "Confirm Information": "Confirm name, email, phone before delivery",
-      "Delivery Preference": "Confirm email delivery of data-room link",
-      "Send Documents": "Issue data-room unlock link",
+      "Delivery Preference": "Confirm email delivery of Investor Preview / Data Room link",
+      "Send Documents": "Issue Quelliv Investor Preview / Data Room unlock link",
       "Schedule Follow-up": "Offer book path with Scott / Mike when needed",
     },
     knowledge:
       "Quelliv investor packet categories: DECK (pitch), MODEL (financial model — orientation only), PPM (Private Placement Memorandum), SUB (Subscription Agreement), WARRANT, IRA path materials, BROKER_NOTICE, WHITEOBRIEF. Point to documents for terms; never invent returns.",
     disclaimer:
       "Informational only — not an offer to buy or sell securities. All offering terms are solely as set forth in the PPM and subscription documents. Past performance or illustrative models are not guarantees.",
-    dataRoomUrl: "https://investors.quelliv.com/room?demo=1",
+    dataRoomUrl: "https://v.quelliv.com/invest/989178b76cc2f3f0d734914f",
     videoUrl: "",
     colors: { primary: "#0b0d17", accent: "#8b5cf6" },
     landing: {
-      heroTitle: "Quelliv Investor Data Room",
+      heroTitle: "Quelliv Investor Preview / Data Room",
       heroSubtitle:
-        "Meet Alex — your Deal Agent for document access, gatekeeping, and guidance through the Quelliv investor packet.",
-      ctaLabel: "Start with Alex",
+        "Ask Alex — Quelliv's in-room assistant and Data Room gatekeeper. He unlocks the live Investor Preview (video investor + Access Data Room / Book Conversation) after a short gate, then guides the packet.",
+      ctaLabel: "Ask Alex",
       sections: [
         {
-          title: "Document mastery",
-          body: "Alex knows the deck, model, PPM, subscription, and related materials — and the order investors typically review them.",
+          title: "Ask Alex in-room",
+          body: "Alex is the in-room assistant (Ask Alex, not Ask Vox): deck, model, PPM, subscription, and recommended review order — without inventing terms.",
         },
         {
           title: "Access gate",
-          body: "Name, email, mobile, and required permissions are captured before the room unlocks.",
+          body: "Name, email, mobile, and required permissions are captured before Alex unlocks the Quelliv Investor Preview / Data Room.",
         },
         {
           title: "Human escalation",

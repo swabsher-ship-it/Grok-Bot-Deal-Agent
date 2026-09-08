@@ -2,7 +2,7 @@
   "name": "grok-bot-deal-agent",
   "version": "2.0.0",
   "private": true,
-  "description": "Struxurety DealAgent v2 — Quelliv campaign (Alex)",
+  "description": "Struxurety DealAgent v2 — Quelliv Ask Alex (in-room assistant + Data Room gatekeeper)",
   "scripts": {
     "dev": "next dev",
     "build": "next build",

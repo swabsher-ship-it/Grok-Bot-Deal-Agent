@@ -4,7 +4,7 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Quelliv Deal Agent | Struxurety",
   description:
-    "Alex — Quelliv Investor Data Room Deal Agent (Struxurety). Gatekeeper and document guide.",
+    "Ask Alex — Quelliv in-room assistant and Data Room gatekeeper (Struxurety). Unlocks Investor Preview / Data Room after the access gate.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

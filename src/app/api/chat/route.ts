@@ -62,12 +62,12 @@ export async function POST(req: NextRequest) {
         leadName: lead.name,
         channel: "EMAIL", // SMS outbound disabled until A2P VERIFIED; consent-only
         to: lead.email,
-        subject: "Your Quelliv Investor Data Room Access",
-        preview: `Hi ${lead.name.split(" ")[0]}, Thanks for your interest in Quelliv! Here's your private link...`,
+        subject: "Your Quelliv Investor Preview / Data Room Access",
+        preview: `Hi ${lead.name.split(" ")[0]}, Thanks for your interest in Quelliv! Here's your Investor Preview / Data Room link...`,
         status: "sent",
         createdAt: nowISO(),
       });
-      appendLog("email", "info", "Data room access delivered", { leadId: lead.id });
+      appendLog("email", "info", "Investor Preview / Data Room access delivered", { leadId: lead.id });
     }
 
     saveStore(store);
