@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 export default async function VoicePage() {
   const session = await getAdminSession();
   if (!session) redirect("/admin/login");
-  const { config } = getStore();
+  const { config } = await getStore();
 
   return (
     <div className="space-y-4">

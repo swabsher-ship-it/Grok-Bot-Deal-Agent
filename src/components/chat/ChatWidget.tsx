@@ -10,6 +10,13 @@ import {
 import Link from "next/link";
 import { MessageCircle, X, Send } from "lucide-react";
 import type { GateSession } from "@/lib/chat-engine";
+import {
+  detectDevice,
+  getCachedUtm,
+  getSessionId,
+  getVisitorId,
+  trackClient,
+} from "@/lib/client/analytics";
 
 interface Msg {
   id: string;
@@ -32,9 +39,11 @@ const ChatWidget = forwardRef<ChatWidgetHandle, { floating?: boolean }>(
     const [input, setInput] = useState("");
     const [loading, setLoading] = useState(false);
     const [conversationId, setConversationId] = useState<string | null>(null);
+    const [leadId, setLeadId] = useState<string | null>(null);
     const [gate, setGate] = useState<GateSession>({ step: "interest" });
     const [unlockedUrl, setUnlockedUrl] = useState<string | null>(null);
     const bottomRef = useRef<HTMLDivElement>(null);
+    const launcherTracked = useRef(false);
 
     useEffect(() => {
       bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -46,6 +55,10 @@ const ChatWidget = forwardRef<ChatWidgetHandle, { floating?: boolean }>(
 
     function openPanel() {
       setOpen(true);
+      if (!launcherTracked.current) {
+        launcherTracked.current = true;
+        trackClient({ type: "chat_launcher_open" });
+      }
       if (phase === "idle" || (!conversationId && phase !== "connecting" && phase !== "chat")) {
         setPhase("consent");
       }
@@ -58,20 +71,33 @@ const ChatWidget = forwardRef<ChatWidgetHandle, { floating?: boolean }>(
       setPhase("connecting");
       setLoading(true);
       try {
-        const sid = localStorage.getItem("dealagent_sid") || undefined;
+        const sid = getSessionId();
+        const vid = getVisitorId();
         const res = await fetch("/api/chat/start", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             sessionId: sid,
+            visitorId: vid,
             source: "landing_page",
             aiConsent: true,
+            device: detectDevice(),
+            utm: getCachedUtm(),
+            path: typeof window !== "undefined" ? window.location.pathname : "/",
           }),
         });
         const data = await res.json();
         if (data.ok) {
-          if (data.sessionId) localStorage.setItem("dealagent_sid", data.sessionId);
+          if (data.sessionId) {
+            try {
+              sessionStorage.setItem("dealagent_sid", data.sessionId);
+              localStorage.setItem("dealagent_sid", data.sessionId);
+            } catch {
+              /* ignore */
+            }
+          }
           setConversationId(data.conversationId);
+          setLeadId(data.leadId || null);
           setMessages(data.messages || []);
           setGate(data.gate || { step: "interest" });
           setPhase("chat");
@@ -95,7 +121,13 @@ const ChatWidget = forwardRef<ChatWidgetHandle, { floating?: boolean }>(
         const res = await fetch("/api/chat", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ conversationId, message: text, gate }),
+          body: JSON.stringify({
+            conversationId,
+            message: text,
+            gate,
+            visitorId: getVisitorId(),
+            sessionId: getSessionId(),
+          }),
         });
         const data = await res.json();
         if (data.ok) {
@@ -216,6 +248,13 @@ const ChatWidget = forwardRef<ChatWidgetHandle, { floating?: boolean }>(
                   href={unlockedUrl}
                   target="_blank"
                   rel="noreferrer"
+                  onClick={() =>
+                    trackClient({
+                      type: "data_room_click",
+                      leadId: leadId || undefined,
+                      conversationId: conversationId || undefined,
+                    })
+                  }
                   className="ml-9 block rounded-xl border border-quelliv-cta/40 bg-quelliv-cta/10 px-3 py-2.5 text-sm font-medium text-quelliv-navy hover:bg-quelliv-cta/15"
                 >
                   Open Quelliv Investor Preview / Data Room →

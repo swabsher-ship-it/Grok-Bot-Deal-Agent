@@ -5,6 +5,7 @@ import PageviewTracker from "@/components/landing/PageviewTracker";
 import ProspectHeader from "@/components/landing/ProspectHeader";
 import ProspectFooter from "@/components/landing/ProspectFooter";
 import ChatWidget, { type ChatWidgetHandle } from "@/components/chat/ChatWidget";
+import { trackClient } from "@/lib/client/analytics";
 
 const DISCLOSURE =
   "DISCLOSURE: All information contained in this communication should not be considered investment advice nor an offer to buy or sell securities, and for informational purposes only. Investing in private or early-stage offerings involves a high degree of risk. Securities sold through these offerings are not (most of the time) publicly traded and, therefore, tend to be illiquid. Additionally, investors may receive restricted stock that is subject to holding period requirements. Companies seeking capital through these offerings tend to be in earlier stages of development and have not yet been fully tested in the public marketplace. Investing in private or early-stage offerings requires a tolerance for high risk, low liquidity, and a long-term commitment. Investors must be able to afford to lose their entire investment. Such investment products are not FDIC insured, may lose value, and have no bank guarantee.";
@@ -45,7 +46,10 @@ export default function HomePage() {
           </p>
           <button
             type="button"
-            onClick={() => chatRef.current?.open()}
+            onClick={() => {
+              trackClient({ type: "learn_more_click" });
+              chatRef.current?.open();
+            }}
             className="mt-10 rounded-xl bg-quelliv-cta px-10 py-3.5 text-sm font-medium tracking-wide text-white shadow-cta transition hover:brightness-105"
           >
             Learn More

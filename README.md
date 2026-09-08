@@ -23,6 +23,37 @@ Use package.json scripts: install, build, then dev. Open localhost:3000
 ## Seed admin
 scott.absher@quelliv.com with the default seed password documented in package notes (change-me).
 
+## Durable storage (Cloud Run)
+
+By default the app persists to local `data/store.json` (ephemeral on Cloud Run).
+
+For production durability, set a GCS bucket env var on the Cloud Run service (Application Default Credentials are used automatically):
+
+```bash
+# Either name works:
+GCS_BUCKET=your-alex-data-bucket
+# or
+ALEX_DATA_BUCKET=your-alex-data-bucket
+```
+
+When set, the app:
+- Reads/writes `store.json` in that bucket (leads, conversations, events, sessions, config)
+- Optionally appends analytics lines to `events/YYYY-MM-DD.ndjson` for cheap export
+
+Grant the Cloud Run runtime service account `roles/storage.objectAdmin` (or objectCreator + objectViewer) on the bucket.
+
+Phase 1 uses a single GCS JSON file — no Firestore required.
+
+## Analytics events
+
+Append-only `events[]` in the store (+ NDJSON in GCS). Client assigns:
+- `visitorId` cookie (~1 year, `dealagent_vid`)
+- `sessionId` (sessionStorage / `dealagent_sid`)
+
+Tracked types: `pageview`, `chat_launcher_open`, `learn_more_click`, `consent_checked`, `chat_start`, `gate_step` (name|email|phone|sms_consent|confirm), `unlock`, `data_room_click`, `message_in`, `message_out`, `admin_login`, `takeover`, `resolve`.
+
+Admin CSV exports: `/api/admin/export/leads` and `/api/admin/export/events`.
+
 ## A2P / SMS
 SMS_OUTBOUND_ENABLED=false (hard kill-switch).
 a2pMessagingServiceSid=MGefe912
@@ -33,7 +64,7 @@ Voice DID pool: plan from 9 numbers on MS MGefe912. Guard in src/lib/sms.ts.
 ## Routes
 Public: / /start /terms /privacy
 Admin: /admin /admin/leads /admin/conversations /admin/logs /admin/users /admin/config /admin/voice
-APIs: /api/pageview /api/chat/start /api/chat /api/consent /api/admin/*
+APIs: /api/pageview /api/events /api/chat/start /api/chat /api/consent /api/admin/* /api/admin/export/leads /api/admin/export/events
 
 No inventing investment returns. Do not push remotes without auth.
 Target repo: Grok-Bot-Deal-Agent under swabsher-ship-it.

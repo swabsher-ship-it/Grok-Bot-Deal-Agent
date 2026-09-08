@@ -8,8 +8,8 @@ export const dynamic = "force-dynamic";
 export async function POST() {
   const jar = await cookies();
   const token = jar.get(sessionCookieName())?.value;
-  if (token) destroySession(token);
-  appendLog("admin", "info", "Admin logout");
+  if (token) await destroySession(token);
+  await appendLog("admin", "info", "Admin logout");
   const res = NextResponse.json({ ok: true });
   res.cookies.set(sessionCookieName(), "", { httpOnly: true, path: "/", maxAge: 0 });
   return res;

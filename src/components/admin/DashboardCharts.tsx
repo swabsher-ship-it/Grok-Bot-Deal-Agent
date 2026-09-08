@@ -13,6 +13,7 @@ import {
   AreaChart,
   Area,
   CartesianGrid,
+  Legend,
 } from "recharts";
 
 const COLORS = ["#22c55e", "#8b5cf6", "#3b82f6", "#eab308", "#64748b", "#ef4444"];
@@ -28,6 +29,7 @@ export default function DashboardCharts({
   statusCounts,
   campaignCounts,
   contentCounts,
+  pageviewsBySource,
   last7,
   avgMsgs,
 }: {
@@ -37,7 +39,8 @@ export default function DashboardCharts({
   statusCounts: Record<string, number>;
   campaignCounts: Record<string, number>;
   contentCounts: Record<string, number>;
-  last7: { day: string; count: number }[];
+  pageviewsBySource: Record<string, number>;
+  last7: { day: string; count: number; pageviews?: number }[];
   avgMsgs: number;
 }) {
   const devices = toBars(deviceCounts);
@@ -46,12 +49,31 @@ export default function DashboardCharts({
   const statuses = toBars(statusCounts);
   const campaigns = toBars(campaignCounts);
   const content = toBars(contentCounts);
+  const pvSources = toBars(pageviewsBySource);
   const deviceTotal = devices.reduce((a, b) => a + b.value, 0);
   const regionTotal = regions.reduce((a, b) => a + b.value, 0);
 
   return (
     <div className="space-y-4">
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <div className="card">
+          <h3 className="mb-3 text-sm font-medium text-deal-muted">Pageviews by Source / UTM</h3>
+          {pvSources.length === 0 ? (
+            <p className="text-sm text-deal-muted">No pageview UTM data yet.</p>
+          ) : (
+            <div className="h-48">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={pvSources} layout="vertical" margin={{ left: 20 }}>
+                  <XAxis type="number" hide />
+                  <YAxis type="category" dataKey="name" width={90} tick={{ fill: "#8b95b0", fontSize: 12 }} />
+                  <Tooltip contentStyle={{ background: "#161b2c", border: "1px solid #1e2540" }} />
+                  <Bar dataKey="value" fill="#3b82f6" radius={[0, 4, 4, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+        </div>
+
         <div className="card">
           <h3 className="mb-3 text-sm font-medium text-deal-muted">Lead Sources</h3>
           <div className="h-48">
@@ -131,7 +153,7 @@ export default function DashboardCharts({
         </div>
 
         <div className="card">
-          <h3 className="mb-3 text-sm font-medium text-deal-muted">Leads Last 7 Days</h3>
+          <h3 className="mb-3 text-sm font-medium text-deal-muted">Leads & Pageviews</h3>
           <div className="h-48">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={last7}>
@@ -139,7 +161,9 @@ export default function DashboardCharts({
                 <XAxis dataKey="day" tick={{ fill: "#8b95b0", fontSize: 11 }} />
                 <YAxis allowDecimals={false} tick={{ fill: "#8b95b0", fontSize: 11 }} />
                 <Tooltip contentStyle={{ background: "#161b2c", border: "1px solid #1e2540" }} />
-                <Area type="monotone" dataKey="count" stroke="#8b5cf6" fill="#8b5cf6" fillOpacity={0.25} />
+                <Legend />
+                <Area type="monotone" dataKey="pageviews" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.15} name="Pageviews" />
+                <Area type="monotone" dataKey="count" stroke="#8b5cf6" fill="#8b5cf6" fillOpacity={0.25} name="Leads" />
               </AreaChart>
             </ResponsiveContainer>
           </div>

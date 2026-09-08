@@ -31,6 +31,40 @@ export interface UTMParams {
   utm_content?: string;
 }
 
+export type AnalyticsEventType =
+  | "pageview"
+  | "chat_launcher_open"
+  | "learn_more_click"
+  | "consent_checked"
+  | "chat_start"
+  | "gate_step"
+  | "unlock"
+  | "data_room_click"
+  | "message_in"
+  | "message_out"
+  | "admin_login"
+  | "takeover"
+  | "resolve";
+
+export type GateStepName = "name" | "email" | "phone" | "sms_consent" | "confirm";
+
+export interface AnalyticsEvent {
+  id: string;
+  type: AnalyticsEventType;
+  createdAt: string;
+  visitorId?: string;
+  sessionId?: string;
+  path?: string;
+  referrer?: string;
+  device?: DeviceType;
+  utm?: UTMParams;
+  /** For gate_step: name | email | phone | sms_consent | confirm */
+  step?: GateStepName | string;
+  leadId?: string;
+  conversationId?: string;
+  meta?: Record<string, unknown>;
+}
+
 export interface Lead {
   id: string;
   name: string;
@@ -48,6 +82,8 @@ export interface Lead {
   utm?: UTMParams;
   consents?: ConsentRecord;
   conversationId?: string;
+  visitorId?: string;
+  sessionId?: string;
 }
 
 export interface ConsentRecord {
@@ -122,12 +158,14 @@ export interface Pageview {
   region: Region;
   utm?: UTMParams;
   sessionId: string;
+  visitorId?: string;
   createdAt: string;
 }
 
 export interface ChatStart {
   id: string;
   sessionId: string;
+  visitorId?: string;
   leadId?: string;
   createdAt: string;
 }
@@ -173,6 +211,10 @@ export interface StoreData {
   deliveries: Delivery[];
   pageviews: Pageview[];
   chatStarts: ChatStart[];
+  /** Append-only analytics events (pageview, chat, gate, admin, …). */
+  events: AnalyticsEvent[];
   config: CampaignConfig;
   sessions: Record<string, { userId: string; email: string; expiresAt: string }>;
 }
+
+export type DashboardRange = "7d" | "30d" | "all";

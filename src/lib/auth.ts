@@ -1,6 +1,6 @@
 import bcrypt from "bcryptjs";
 import { cookies } from "next/headers";
-import { getStore, saveStore } from "./store";
+import { getStore, updateStore } from "./store";
 import { uid } from "./utils";
 
 const SESSION_COOKIE = "dealagent_session";
@@ -15,33 +15,34 @@ export async function verifyPassword(password: string, hash: string): Promise<bo
 }
 
 export async function createSession(userId: string, email: string): Promise<string> {
-  const store = getStore();
   const token = uid("sess");
   const expires = new Date();
   expires.setDate(expires.getDate() + SESSION_DAYS);
-  store.sessions[token] = {
-    userId,
-    email,
-    expiresAt: expires.toISOString(),
-  };
-  saveStore(store);
+  await updateStore((store) => {
+    store.sessions[token] = {
+      userId,
+      email,
+      expiresAt: expires.toISOString(),
+    };
+  });
   return token;
 }
 
-export function destroySession(token: string): void {
-  const store = getStore();
-  delete store.sessions[token];
-  saveStore(store);
+export async function destroySession(token: string): Promise<void> {
+  await updateStore((store) => {
+    delete store.sessions[token];
+  });
 }
 
-export function getSessionFromToken(token: string | undefined) {
+export async function getSessionFromToken(token: string | undefined) {
   if (!token) return null;
-  const store = getStore();
+  const store = await getStore();
   const session = store.sessions[token];
   if (!session) return null;
   if (new Date(session.expiresAt).getTime() < Date.now()) {
-    delete store.sessions[token];
-    saveStore(store);
+    await updateStore((s) => {
+      delete s.sessions[token];
+    });
     return null;
   }
   const user = store.users.find((u) => u.id === session.userId && u.active);

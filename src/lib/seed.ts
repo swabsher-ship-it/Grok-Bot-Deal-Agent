@@ -410,6 +410,7 @@ export function buildSeedData(): StoreData {
     pageviews,
     chatStarts,
     config,
+    events: [],
     sessions: {},
   };
 }

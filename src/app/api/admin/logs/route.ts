@@ -23,7 +23,8 @@ export async function GET(req: NextRequest) {
   };
   const since = Date.now() - (rangeMs[range] || rangeMs["7d"]);
 
-  let logs = getStore().logs.filter((l) => new Date(l.createdAt).getTime() >= since);
+  const store = await getStore();
+  let logs = store.logs.filter((l) => new Date(l.createdAt).getTime() >= since);
   if (category) logs = logs.filter((l) => l.category === category);
   if (severity) logs = logs.filter((l) => l.severity === severity);
   if (q) logs = logs.filter((l) => l.message.toLowerCase().includes(q));
