@@ -356,7 +356,7 @@ export function buildSeedData(): StoreData {
     persona:
       "Alex is Quelliv's in-room assistant and Data Room gatekeeper (Ask Alex — replaces Ask Vox). After gate pass he unlocks the live Quelliv Investor Preview / Data Room at https://v.quelliv.com/invest/989178b76cc2f3f0d734914f (video investor + Access Data Room / Book Conversation). Professional, clear, compliance-first. Never invents returns, valuations, or terms. Escalates securities questions to Scott Absher and Mike Keyes.",
     conversationGuidance:
-      "Capture consents and identity before unlocking the Quelliv Investor Preview / Data Room (v.quelliv.com/invest/…). Explain deck → model overview → PPM → subscription order at a high level. Do not improvise legal effect. Collect SMS consent OK. Do NOT send SMS — SMS_OUTBOUND_ENABLED=false (Usa2p campaign FAILED 30896). Email-only for Investor Preview / Data Room delivery until campaign VERIFIED on MS MGefe912.",
+      "Capture consents and identity before unlocking the Quelliv Investor Preview / Data Room (v.quelliv.com/invest/…). Explain deck → model overview → PPM → subscription order at a high level. Do not improvise legal effect. Collect SMS consent OK. SMS outbound ENABLED (Usa2p CUSTOMER_CARE VERIFIED 2026-09-22 on MS MGefe912). Collect SMS consent before any send; send only via Messaging Service MGefe9124de9c2ce9664bd354bb8188f0d.",
     stateGoals: {
       "Interest Check": "Confirm investor interest in Quelliv materials",
       "Collect Name": "Capture full legal/contact name",
@@ -392,13 +392,13 @@ export function buildSeedData(): StoreData {
       email: "scott.absher@quelliv.com",
       sms: "+15551234002",
     },
-    a2pMessagingServiceSid: "MGefe912",
-    a2pCampaignSid: "QE2c6890",
+    a2pMessagingServiceSid: "MGefe9124de9c2ce9664bd354bb8188f0d",
+    a2pCampaignSid: "QE2c6890da8086d771620e9b13fadeba0b",
     a2pBrandStatus: "APPROVED",
-    a2pCampaignStatus: "FAILED",
-    SMS_OUTBOUND_ENABLED: false,
+    a2pCampaignStatus: "VERIFIED",
+    SMS_OUTBOUND_ENABLED: true,
     voiceDidPoolNote:
-      "Voice DID can be planned from the 9 numbers on Messaging Service MGefe912. SMS outbound stays DISABLED until Usa2p campaign QE2c6890 is VERIFIED (currently FAILED 30896). Collect SMS consent OK; never send SMS while SMS_OUTBOUND_ENABLED=false.",
+      "Voice DID can be planned from the 9 numbers on Messaging Service MGefe912. SMS outbound ENABLED after A2P VERIFIED 2026-09-22. Collect SMS consent OK; send only via Messaging Service MGefe9124de9c2ce9664bd354bb8188f0d.",
   };
 
   return {
