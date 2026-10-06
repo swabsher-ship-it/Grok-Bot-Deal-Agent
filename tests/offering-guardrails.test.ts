@@ -2,12 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 import { initialAssistantMessage, nextGateReply, PUBLIC_GREETING, type GateSession } from "../src/lib/chat-engine";
-import {
-  QUELLIV_OFFERING_DISCLAIMER,
-  STRUXURETY_INVESTING_REPLY,
-  readQuellivGuardrails,
-  readStruxuretyGuardrails,
-} from "../src/lib/offering-guardrails";
+import { QUELLIV_OFFERING_DISCLAIMER, readQuellivGuardrails } from "../src/lib/offering-guardrails";
 import { buildSeedData } from "../src/lib/seed";
 
 const DISCLAIMER = QUELLIV_OFFERING_DISCLAIMER;
@@ -33,13 +28,6 @@ const EXEMPTION_A = `I can't discuss the exemption here. Details are available t
 const WIRE_A = `You can invest only through the offering documents and Global Digital Markets. I can't take commitments, amounts, payments, wire details, or financial documents in this chat. I can connect you with Global Digital Markets or the data room.\n\n${DISCLAIMER}`;
 const ELIGIBLE_A = `I can't determine whether you are eligible. Global Digital Markets handles eligibility, and you can also use the data-room request. Please don't send financial documents in this chat.\n\n${DISCLAIMER}`;
 
-const STRUXURETY_Q = [
-  "Can I invest in Struxurety?",
-  "What's Struxurety's growth capital structure and valuation?",
-  "What returns will I get if I put money into Struxurety?",
-];
-const STRUXURETY_A = `${STRUXURETY_INVESTING_REPLY} Please send your name and email.`;
-
 function assertNoQuellivLeak(reply: string) {
   assert.doesNotMatch(reply, rulePattern);
   assert.doesNotMatch(reply, /\$\s?\d/);
@@ -50,22 +38,15 @@ function assertNoQuellivLeak(reply: string) {
 
 test("guardrail text is empty unless the environment supplies it", () => {
   const prevQuelliv = process.env.QUELLIV_OFFERING_GUARDRAILS;
-  const prevStruxurety = process.env.STRUXURETY_OFFERING_GUARDRAILS;
   try {
     delete process.env.QUELLIV_OFFERING_GUARDRAILS;
-    delete process.env.STRUXURETY_OFFERING_GUARDRAILS;
     assert.equal(readQuellivGuardrails(), "");
-    assert.equal(readStruxuretyGuardrails(), "");
 
     process.env.QUELLIV_OFFERING_GUARDRAILS = "QUELLIV_GUARDRAIL_SENTINEL";
-    process.env.STRUXURETY_OFFERING_GUARDRAILS = "STRUXURETY_GUARDRAIL_SENTINEL";
     assert.equal(readQuellivGuardrails(), "QUELLIV_GUARDRAIL_SENTINEL");
-    assert.equal(readStruxuretyGuardrails(), "STRUXURETY_GUARDRAIL_SENTINEL");
   } finally {
     if (prevQuelliv === undefined) delete process.env.QUELLIV_OFFERING_GUARDRAILS;
     else process.env.QUELLIV_OFFERING_GUARDRAILS = prevQuelliv;
-    if (prevStruxurety === undefined) delete process.env.STRUXURETY_OFFERING_GUARDRAILS;
-    else process.env.STRUXURETY_OFFERING_GUARDRAILS = prevStruxurety;
   }
 });
 
@@ -151,29 +132,6 @@ test("access request does not reveal an offering link", () => {
   assert.doesNotMatch(result.reply, /\binvest|\boffering|example\.invalid|v\.quelliv\.com|\$\s*\d/i);
 });
 
-test("Struxurety investing questions use the STATE 0 reply and capture name and email only", () => {
-  for (const question of STRUXURETY_Q) {
-    const first = nextGateReply(loggedOut, question, config, false);
-    assert.equal(first.reply, STRUXURETY_A);
-    assert.doesNotMatch(first.reply, /growth capital|capital structure|valuation|returns|\$\s?\d|private placement/i);
-    assert.doesNotMatch(first.reply, rulePattern);
-    assert.doesNotMatch(first.reply, /not investment advice or an offer to sell securities/);
-    assert.equal(first.session.struxuretyInterest?.phase, "contact");
-
-    const noted = nextGateReply(first.session, "Jordan Lee jordan@example.com", config, false);
-    assert.equal(
-      noted.reply,
-      "Thanks, Jordan Lee. I've noted your interest and Scott's team will follow up at jordan@example.com."
-    );
-    assert.equal(noted.leadPatch?.name, "Jordan Lee");
-    assert.equal(noted.leadPatch?.email, "jordan@example.com");
-    assert.equal(noted.leadPatch?.phone, undefined);
-    assert.doesNotMatch(noted.reply, /growth capital|valuation|returns|\$\s?\d|wire|private placement/i);
-    assert.doesNotMatch(noted.reply, rulePattern);
-    assert.equal(noted.session.struxuretyInterest?.phase, "done");
-  }
-});
-
 test("public pages have no investment, offering, price, or size language", () => {
   const files = [
     "src/app/page.tsx",
@@ -190,7 +148,7 @@ test("public pages have no investment, offering, price, or size language", () =>
     `\\binvest|\\boffering\\b|\\$\\s*\\d|\\b${ruleNumber}\\b|v\\.quelliv\\.com\\/invest|investors\\.quelliv\\.com`,
     "i"
   );
-  const envNames = ["OFFERING_TERMS_JSON", "QUELLIV_OFFERING_GUARDRAILS", "STRUXURETY_OFFERING_GUARDRAILS"];
+  const envNames = ["OFFERING_TERMS_JSON", "QUELLIV_OFFERING_GUARDRAILS"];
   for (const file of files) {
     let text = readFileSync(file, "utf8");
     if (file === "README.md") {
