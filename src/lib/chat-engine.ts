@@ -1,5 +1,9 @@
 import type { CampaignConfig, ConsentRecord, Lead, LeadState } from "./types";
-import { quellivOfferingReply } from "./offering-guardrails";
+import {
+  STRUXURETY_INVESTING_REPLY,
+  isStruxuretyInvestingQuestion,
+  quellivOfferingReply,
+} from "./offering-guardrails";
 
 export type GateStep =
   | "consent"
@@ -12,6 +16,12 @@ export type GateStep =
   | "unlocked"
   | "chat";
 
+export interface StruxuretyInterest {
+  phase: "contact" | "email" | "done";
+  name?: string;
+  email?: string;
+}
+
 export interface GateSession {
   step: GateStep;
   name?: string;
@@ -21,6 +31,8 @@ export interface GateSession {
   smsConsent?: boolean;
   leadId?: string;
   unlocked?: boolean;
+  /** STATE 0 name-and-email capture. Not a Quelliv data-room login. */
+  struxuretyInterest?: StruxuretyInterest;
 }
 
 /** Public greeting. Ignores config.welcome so admin copy cannot pitch an offering. */
@@ -42,6 +54,93 @@ export function consentPrompt(): string {
   ].join("\n");
 }
 
+const EMAIL_RE = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i;
+
+function extractEmail(text: string): string | null {
+  const match = text.match(EMAIL_RE);
+  return match ? match[0] : null;
+}
+
+function extractName(text: string, email: string | null): string | null {
+  const stripped = email ? text.replace(email, " ") : text;
+  const name = stripped.replace(/[^A-Za-z\s.'-]/g, " ").replace(/\s+/g, " ").trim();
+  if (name.length < 2) return null;
+  if (/\b(invest|wire|return|valuation|capital|offering|price|struxurety|quelliv)\b/i.test(name)) return null;
+  return name;
+}
+
+function struxuretyAsk(session: GateSession, extra?: string) {
+  const reply = extra ? `${STRUXURETY_INVESTING_REPLY} ${extra}` : STRUXURETY_INVESTING_REPLY;
+  return { reply, session };
+}
+
+function handleStruxurety(
+  session: GateSession,
+  text: string,
+  lower: string
+): { reply: string; session: GateSession; leadPatch?: Partial<Lead> } | null {
+  const capture = session.struxuretyInterest;
+  const asking = isStruxuretyInvestingQuestion(lower);
+
+  if (!capture && !asking) return null;
+
+  if (capture?.phase === "done") {
+    if (asking) return struxuretyAsk(session);
+    return null;
+  }
+
+  if (!capture) {
+    return struxuretyAsk(
+      { ...session, struxuretyInterest: { phase: "contact" } },
+      "Please send your name and email."
+    );
+  }
+
+  const email = extractEmail(text);
+  const name = extractName(text, email) || capture.name;
+
+  if (email && name) {
+    const next: GateSession = {
+      ...session,
+      name,
+      email,
+      struxuretyInterest: { phase: "done", name, email },
+    };
+    return {
+      reply: `Thanks, ${name}. I've noted your interest and Scott's team will follow up at ${email}.`,
+      session: next,
+      leadPatch: { name, email, status: "Info Collected", state: "Collect Email" },
+    };
+  }
+
+  if (name && !email) {
+    const next: GateSession = {
+      ...session,
+      name,
+      struxuretyInterest: { phase: "email", name },
+    };
+    return {
+      reply: "Thanks. What email should Scott's team use?",
+      session: next,
+      leadPatch: { name, state: "Collect Email" },
+    };
+  }
+
+  if (email && !name) {
+    return {
+      reply: "Thanks. What name should I note?",
+      session: {
+        ...session,
+        email,
+        struxuretyInterest: { phase: "contact", email },
+      },
+      leadPatch: { email, state: "Collect Name" },
+    };
+  }
+
+  return struxuretyAsk(session, "Please send your name and email only.");
+}
+
 export function nextGateReply(
   session: GateSession,
   userText: string,
@@ -53,6 +152,9 @@ export function nextGateReply(
 
   // Gate completion is not data-room login. Price and size stay off unless a
   // caller passes a separately verified flag. The public API never does.
+  const struxurety = handleStruxurety(session, text, lower);
+  if (struxurety) return struxurety;
+
   const offeringReply = quellivOfferingReply(lower, hasDataRoomAccess);
   if (offeringReply) return { reply: offeringReply, session };
 

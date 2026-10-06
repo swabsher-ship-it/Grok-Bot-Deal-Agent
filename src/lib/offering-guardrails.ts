@@ -1,5 +1,6 @@
 /**
  * Quelliv stays STATE 1. STATE 2 is not activated.
+ * Struxurety stays STATE 0. The two blocks are not combined into one reply.
  *
  * Full guardrail text and verified term replies are not stored in this repo.
  * They are read at runtime from environment variables that are unset by default.
@@ -8,6 +9,9 @@
 
 export const QUELLIV_OFFERING_DISCLAIMER =
   "This is general information, not investment advice or an offer to sell securities. Any offer is made only through Quelliv's offering documents. Private investments are risky and hard to sell.";
+
+export const STRUXURETY_INVESTING_REPLY =
+  "I can't discuss investment opportunities. If you'd like, I can note your interest and have Scott's team follow up by email.";
 
 const UNVERIFIED_PRICE =
   "Terms are in the offering documents, available through Global Digital Markets or the data-room request. I can't share a price or the amount being raised without verified data-room access.";
@@ -51,6 +55,11 @@ export function readQuellivGuardrails(): string {
   return envText("QUELLIV_OFFERING_GUARDRAILS");
 }
 
+/** Full Struxurety guardrail text. Empty when STRUXURETY_OFFERING_GUARDRAILS is unset. */
+export function readStruxuretyGuardrails(): string {
+  return envText("STRUXURETY_OFFERING_GUARDRAILS");
+}
+
 function readOfferingTerms(): OfferingTerms {
   const raw = envText("OFFERING_TERMS_JSON");
   if (!raw) return {};
@@ -74,6 +83,18 @@ export function withQuellivDisclaimer(body: string): string {
   const trimmed = body.trim();
   if (trimmed.includes("not investment advice or an offer to sell securities")) return trimmed;
   return `${trimmed}\n\n${QUELLIV_OFFERING_DISCLAIMER}`;
+}
+
+export function isStruxuretyInvestingQuestion(text: string): boolean {
+  const lower = text.toLowerCase();
+  if (!lower.includes("struxurety")) return false;
+  return (
+    /\$\s?\d/.test(lower) ||
+    exemptionRulePattern().test(lower) ||
+    /\b(invest\w*|capital|valuations?|returns?|terms|rais\w*|offerings?|shares?|equity|wir\w*|commit\w*|accredited|prices?|multiples?|dividends?|blueprint)\b/.test(
+      lower
+    )
+  );
 }
 
 function enforceState1(answer: string, hasDataRoomAccess: boolean): string {
