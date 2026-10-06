@@ -23,10 +23,10 @@ export default function StartPage() {
         <div className="mx-auto max-w-2xl text-center">
           <div className="mx-auto mb-6 h-[3px] w-12 rounded-full bg-quelliv-cta" />
           <h1 className="text-xl font-semibold uppercase tracking-[0.1em] text-quelliv-navy md:text-2xl">
-            I&apos;d Like to Learn More
+            Request access
           </h1>
           <p className="mx-auto mt-5 max-w-xl text-[15px] font-light leading-relaxed text-quelliv-muted">
-            Chat with Alex to learn more about Quelliv and unlock access to our investor data room.
+            Chat with Alex to request access. You will be asked for your name and email.
           </p>
         </div>
       </section>

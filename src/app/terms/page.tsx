@@ -9,12 +9,9 @@ export default function TermsPage() {
       <article className="mx-auto max-w-3xl px-6 py-16">
         <h1 className="text-2xl font-semibold uppercase tracking-wide">Terms of Service</h1>
         <p className="mt-6 text-sm font-light leading-relaxed text-quelliv-muted">
-          These terms govern use of Quelliv&apos;s investor communications tools, including the Alex
-          AI assistant. Communications are informational only and do not constitute an offer to buy
-          or sell securities. Binding offering terms appear solely in the Private Placement
-          Memorandum and related subscription documents. By using this site you agree to receive
-          AI-assisted communications about Quelliv investment opportunities subject to applicable
-          law.
+          These terms govern use of this Quelliv website and the Alex assistant. Chat may be logged.
+          Please don&apos;t send payment details or financial documents in the chat. By using this
+          site you agree to these terms and to the Privacy Policy.
         </p>
         <p className="mt-4 text-sm font-light leading-relaxed text-quelliv-muted">
           Placeholder summary for Deal Agent — counsel final copy pending. See also our{" "}

@@ -31,7 +31,6 @@ export async function POST(req: NextRequest) {
 
     type GateResult = ReturnType<typeof nextGateReply>;
     let result!: GateResult;
-    let dataRoomUrl: string | undefined;
     let leadId: string | undefined;
     let outMessages: unknown[] = [];
     const prevStep = gate.step;
@@ -45,7 +44,8 @@ export async function POST(req: NextRequest) {
       const createdAt = nowISO();
       conv.messages.push({ id: uid("msg"), role: "user", content: message, createdAt });
 
-      const gateResult = nextGateReply(gate, message, store.config);
+      // Access is never taken from the client. This app has no data-room login.
+      const gateResult = nextGateReply(gate, message, store.config, false);
       result = gateResult;
       conv.messages.push({
         id: uid("msg"),
@@ -71,22 +71,8 @@ export async function POST(req: NextRequest) {
         }
       }
 
-      if (gateResult.unlock && lead) {
-        lead.status = "Docs Sent";
-        lead.state = "Send Documents";
-        store.deliveries.unshift({
-          id: uid("del"),
-          leadId: lead.id,
-          leadName: lead.name,
-          channel: "EMAIL",
-          to: lead.email,
-          subject: "Your Quelliv Investor Preview / Data Room Access",
-          preview: `Hi ${lead.name.split(" ")[0]}, Thanks for your interest in Quelliv! Here's your Investor Preview / Data Room link...`,
-          status: "sent",
-          createdAt: nowISO(),
-        });
-        dataRoomUrl = store.config.dataRoomUrl;
-      }
+      // A completed access request is not verified data-room access.
+      // Do not email or return an offering link.
 
       outMessages = conv.messages;
     });
@@ -134,9 +120,9 @@ export async function POST(req: NextRequest) {
         sessionId,
         conversationId,
         leadId,
-        meta: { dataRoomUrl },
+        meta: { accessRequest: true },
       });
-      await appendLog("email", "info", "Investor Preview / Data Room access delivered", { leadId });
+      await appendLog("chat", "info", "Access request recorded", { leadId });
     }
 
     await appendLog("chat", "info", "Chat message processed", {
@@ -148,8 +134,7 @@ export async function POST(req: NextRequest) {
       ok: true,
       reply: result.reply,
       gate: result.session,
-      unlocked: Boolean(result.unlock),
-      dataRoomUrl: result.unlock ? dataRoomUrl : undefined,
+      unlocked: false,
       messages: outMessages,
     });
   } catch (e) {

@@ -17,9 +17,8 @@ const brand = Great_Vibes({
 });
 
 export const metadata: Metadata = {
-  title: "Quelliv | Explore an Investment",
-  description:
-    "Chat with Alex, Quelliv's AI assistant, to learn more about our investment opportunity and access the investor data room.",
+  title: "Quelliv",
+  description: "Request access to learn more about Quelliv.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

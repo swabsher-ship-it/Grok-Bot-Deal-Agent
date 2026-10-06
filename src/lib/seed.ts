@@ -189,7 +189,7 @@ export function buildSeedData(): StoreData {
       {
         id: `msg_${lead.id}_1`,
         role: "assistant",
-        content: `Hi — I'm Alex, Quelliv's in-room assistant and Data Room gatekeeper (Ask Alex). I unlock the Quelliv Investor Preview / Data Room once we capture your details and consents.`,
+        content: `Hi, I'm Alex with Quelliv. I can take a request for access or answer a general question about the company.`,
         createdAt: lead.createdAt,
       },
     ];
@@ -203,7 +203,7 @@ export function buildSeedData(): StoreData {
       msgs.push({
         id: `msg_${lead.id}_3`,
         role: "assistant",
-        content: `Thanks, ${lead.name.split(" ")[0]}. What's the best email for your Quelliv Investor Preview / Data Room access link?`,
+        content: `Thanks, ${lead.name.split(" ")[0]}. What's the best email for your access request?`,
         createdAt: lead.createdAt,
       });
       if (lead.status === "Docs Sent" || lead.status === "Engaged") {
@@ -224,7 +224,7 @@ export function buildSeedData(): StoreData {
           content:
             m % 2 === 0
               ? "Looking forward to reviewing the materials."
-              : "Your Quelliv Investor Preview / Data Room link is ready. Ask me about the deck, model, PPM, or subscription process — I won't invent terms or returns.",
+              : "Your access request is recorded. A teammate will follow up by email.",
           createdAt: lead.createdAt,
         });
       }
@@ -248,8 +248,8 @@ export function buildSeedData(): StoreData {
     leadName: l.name,
     channel: i % 5 === 0 ? ("SMS" as const) : ("EMAIL" as const),
     to: i % 5 === 0 ? l.phone : l.email,
-    subject: "Your Quelliv Investor Preview / Data Room Access",
-    preview: `Hi ${l.name.split(" ")[0]}, Thanks for your interest in Quelliv! Here's your Investor Preview / Data Room link...`,
+    subject: "Your Quelliv access request",
+    preview: `Hi ${l.name.split(" ")[0]}, thanks for your request. A teammate will follow up by email.`,
     status: "sent" as const,
     createdAt: l.updatedAt,
   }));
@@ -335,7 +335,7 @@ export function buildSeedData(): StoreData {
       id: "log_4",
       category: "email",
       severity: "info",
-      message: "Investor Preview / Data Room access email queued",
+      message: "Access request recorded",
       createdAt: isoDaysAgo(2),
     },
     {
@@ -352,37 +352,36 @@ export function buildSeedData(): StoreData {
     campaign: "Quelliv",
     agentName: "Alex",
     welcome:
-      "Hi there! I'm Alex, a friendly AI assistant from Quelliv. Thanks for your interest in learning more about us! I'd love to help you learn more about the opportunity and get you access to our investor materials. No pressure at all — are you interested in learning more?",
+      "Hi, I'm Alex with Quelliv. I can take a request for access or answer a general question about the company. What would you like to do?",
     persona:
-      "Alex is Quelliv's in-room assistant and Data Room gatekeeper (Ask Alex — replaces Ask Vox). After gate pass he unlocks the live Quelliv Investor Preview / Data Room at https://v.quelliv.com/invest/989178b76cc2f3f0d734914f (video investor + Access Data Room / Book Conversation). Professional, clear, compliance-first. Never invents returns, valuations, or terms. Escalates securities questions to Scott Absher and Mike Keyes.",
+      "Alex takes access requests and answers general questions about Quelliv. The chat engine does not read this persona. Do not add price, size, or exemption names to public pages. Offering answers are hard-coded STATE 1 rules in src/lib/offering-guardrails.ts. STATE 2 is not active.",
     conversationGuidance:
-      "Capture consents and identity before unlocking the Quelliv Investor Preview / Data Room (v.quelliv.com/invest/…). Explain deck → model overview → PPM → subscription order at a high level. Do not improvise legal effect. Collect SMS consent OK. Do NOT send SMS — SMS_OUTBOUND_ENABLED=false (Usa2p campaign FAILED 30896). Email-only for Investor Preview / Data Room delivery until campaign VERIFIED on MS MGefe912.",
+      "Collect name and email for an access request. Do not send an offering link. Collect SMS consent OK. Do NOT send SMS — SMS_OUTBOUND_ENABLED=false (Usa2p campaign FAILED 30896). Outbound texts stay off until the campaign is verified on MS MGefe912.",
     stateGoals: {
-      "Interest Check": "Confirm investor interest in Quelliv materials",
-      "Collect Name": "Capture full legal/contact name",
+      "Interest Check": "Confirm the person wants to request access",
+      "Collect Name": "Capture full contact name",
       "Collect Email": "Capture primary email",
       "Collect Phone": "Capture mobile phone (E.164 preferred)",
-      "Confirm Information": "Confirm name, email, phone before delivery",
-      "Delivery Preference": "Confirm email delivery of Investor Preview / Data Room link",
-      "Send Documents": "Issue Quelliv Investor Preview / Data Room unlock link",
-      "Schedule Follow-up": "Offer book path with Scott / Mike when needed",
+      "Confirm Information": "Confirm name, email, and phone",
+      "Delivery Preference": "Confirm email follow-up",
+      "Send Documents": "Do not send offering documents from chat",
+      "Schedule Follow-up": "Offer a meeting path with Scott / Mike when needed",
     },
     knowledge:
-      "Quelliv investor packet categories: DECK (pitch), MODEL (financial model — orientation only), PPM (Private Placement Memorandum), SUB (Subscription Agreement), WARRANT, IRA path materials, BROKER_NOTICE, WHITEOBRIEF. Point to documents for terms; never invent returns.",
+      "Not read by the chat engine. Do not put price, size, or exemption names here.",
     disclaimer:
-      "Informational only — not an offer to buy or sell securities. All offering terms are solely as set forth in the PPM and subscription documents. Past performance or illustrative models are not guarantees.",
-    dataRoomUrl: "https://v.quelliv.com/invest/989178b76cc2f3f0d734914f",
+      "This is general information, not investment advice or an offer to sell securities. Any offer is made only through Quelliv's offering documents. Private investments are risky and hard to sell.",
+    dataRoomUrl: "",
     videoUrl: "",
     colors: { primary: "#0A2D61", accent: "#709BFF" },
     landing: {
-      heroTitle: "EXPLORE AN INVESTMENT IN QUELLIV",
-      heroSubtitle:
-        "Thank you for your interest in Quelliv. We are anxious to meet you and introduce you to what we are building and how you can be a part.",
-      ctaLabel: "Learn More",
+      heroTitle: "QUELLIV",
+      heroSubtitle: "Quelliv is the company behind this site. Request access if you would like a teammate to follow up.",
+      ctaLabel: "Request access",
       sections: [
         {
-          title: "I'D LIKE TO LEARN MORE",
-          body: "Have questions about investing with Quelliv? Chat with Alex, our AI assistant, to learn more about our investment opportunity, get answers to your questions, and receive access to our investor data room.",
+          title: "REQUEST ACCESS",
+          body: "Chat with Alex and share your name and email. This is a request for access only.",
         },
       ],
       socialX: "https://x.com/quelliv",
