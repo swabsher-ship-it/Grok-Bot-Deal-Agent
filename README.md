@@ -6,6 +6,18 @@ Next.js App Router + TypeScript + Tailwind. Org **Struxurety**, campaign **Quell
 
 Landing CTA: **Request access** (opens Alex consent, then chat)
 
+## Server-only terms
+
+These variables are unset by default. Leave them unset in source control. Set them only on the server. When they are unset, chat does not state terms.
+
+| Variable | Purpose |
+|---|---|
+| `QUELLIV_OFFERING_GUARDRAILS` | Full Quelliv guardrail text. Empty when unset. |
+| `STRUXURETY_OFFERING_GUARDRAILS` | Full Struxurety guardrail text. Empty when unset. |
+| `OFFERING_TERMS_JSON` | JSON object. Optional string fields: `priceReply`, `descriptionReply`. |
+
+`OFFERING_TERMS_JSON` is read only for a caller that already has verified data-room access. This app's public chat never sets that flag. If the variable or a field is missing, the reply is: terms are in the documents, available through Global Digital Markets or the data-room request.
+
 ## Quick start
 Use package.json scripts: install, build, then dev. Open localhost:3000
 

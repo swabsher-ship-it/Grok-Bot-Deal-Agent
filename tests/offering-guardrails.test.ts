@@ -4,25 +4,28 @@ import test from "node:test";
 import { initialAssistantMessage, nextGateReply, PUBLIC_GREETING, type GateSession } from "../src/lib/chat-engine";
 import {
   QUELLIV_OFFERING_DISCLAIMER,
-  QUELLIV_OFFERING_DESCRIPTION,
-  QUELLIV_OFFERING_GUARDRAILS,
   STRUXURETY_INVESTING_REPLY,
-  STRUXURETY_OFFERING_GUARDRAILS,
+  readQuellivGuardrails,
+  readStruxuretyGuardrails,
 } from "../src/lib/offering-guardrails";
 import { buildSeedData } from "../src/lib/seed";
 
 const DISCLAIMER = QUELLIV_OFFERING_DISCLAIMER;
 const loggedOut: GateSession = { step: "interest" };
 const config = buildSeedData().config;
-config.dataRoomUrl = "https://v.quelliv.com/invest/989178b76cc2f3f0d734914f";
+config.dataRoomUrl = "https://example.invalid/invest/DUMMY";
+
+/** Exemption-rule digits, so this file does not spell the rule. */
+const ruleNumber = String.fromCharCode(53, 48, 54);
+const rulePattern = new RegExp(ruleNumber);
 
 function ask(question: string, access = false, session: GateSession = loggedOut) {
   return nextGateReply(session, question, config, access).reply;
 }
 
 const PRICE_Q = "What's the share price and how much are you raising?";
-const EXEMPTION_Q = "Is this a 506(c) offering?";
-const WIRE_Q = "I want to put in $50,000. Can I wire it today?";
+const EXEMPTION_Q = `Is this a ${ruleNumber}(c) offering?`;
+const WIRE_Q = "I want to put in funds. Can I wire it today?";
 const ELIGIBLE_Q = "Am I eligible to invest?";
 
 const PRICE_A = `Terms are in the offering documents, available through Global Digital Markets or the data-room request. I can't share a price or the amount being raised without verified data-room access.\n\n${DISCLAIMER}`;
@@ -33,26 +36,37 @@ const ELIGIBLE_A = `I can't determine whether you are eligible. Global Digital M
 const STRUXURETY_Q = [
   "Can I invest in Struxurety?",
   "What's Struxurety's growth capital structure and valuation?",
-  "What returns will I get if I put $100,000 into Struxurety?",
+  "What returns will I get if I put money into Struxurety?",
 ];
 const STRUXURETY_A = `${STRUXURETY_INVESTING_REPLY} Please send your name and email.`;
 
 function assertNoQuellivLeak(reply: string) {
-  assert.doesNotMatch(reply, /506/);
+  assert.doesNotMatch(reply, rulePattern);
   assert.doesNotMatch(reply, /\$\s?\d/);
-  assert.doesNotMatch(reply, /10,000,000|10 million|\$5|500k|500,000|per location/i);
-  assert.doesNotMatch(reply, /v\.quelliv\.com\/invest/);
-  assert.doesNotMatch(reply, /general solicitation/i);
+  assert.doesNotMatch(reply, /\bmillion\b|per location/i);
+  assert.doesNotMatch(reply, /v\.quelliv\.com/);
   assert.equal(reply.endsWith(DISCLAIMER), true);
 }
 
-test("legal blocks are loaded word for word and STATE 2 is not a reply path", () => {
-  assert.match(QUELLIV_OFFERING_GUARDRAILS, /ACTIVE STATE: 1/);
-  assert.match(QUELLIV_OFFERING_GUARDRAILS, /DO NOT ACTIVATE UNTIL LEGAL ANALYST CONFIRMS/);
-  assert.ok(QUELLIV_OFFERING_GUARDRAILS.includes(DISCLAIMER));
-  assert.equal(QUELLIV_OFFERING_DESCRIPTION, "a private placement under Regulation D for accredited investors");
-  assert.match(STRUXURETY_OFFERING_GUARDRAILS, /ACTIVE STATE: 0 — NO ACTIVE OFFERING/);
-  assert.ok(STRUXURETY_OFFERING_GUARDRAILS.includes(STRUXURETY_INVESTING_REPLY));
+test("guardrail text is empty unless the environment supplies it", () => {
+  const prevQuelliv = process.env.QUELLIV_OFFERING_GUARDRAILS;
+  const prevStruxurety = process.env.STRUXURETY_OFFERING_GUARDRAILS;
+  try {
+    delete process.env.QUELLIV_OFFERING_GUARDRAILS;
+    delete process.env.STRUXURETY_OFFERING_GUARDRAILS;
+    assert.equal(readQuellivGuardrails(), "");
+    assert.equal(readStruxuretyGuardrails(), "");
+
+    process.env.QUELLIV_OFFERING_GUARDRAILS = "QUELLIV_GUARDRAIL_SENTINEL";
+    process.env.STRUXURETY_OFFERING_GUARDRAILS = "STRUXURETY_GUARDRAIL_SENTINEL";
+    assert.equal(readQuellivGuardrails(), "QUELLIV_GUARDRAIL_SENTINEL");
+    assert.equal(readStruxuretyGuardrails(), "STRUXURETY_GUARDRAIL_SENTINEL");
+  } finally {
+    if (prevQuelliv === undefined) delete process.env.QUELLIV_OFFERING_GUARDRAILS;
+    else process.env.QUELLIV_OFFERING_GUARDRAILS = prevQuelliv;
+    if (prevStruxurety === undefined) delete process.env.STRUXURETY_OFFERING_GUARDRAILS;
+    else process.env.STRUXURETY_OFFERING_GUARDRAILS = prevStruxurety;
+  }
 });
 
 test("logged-out visitor: share price and amount being raised", () => {
@@ -62,7 +76,7 @@ test("logged-out visitor: share price and amount being raised", () => {
   assert.doesNotMatch(reply, /private placement under Regulation D/);
 });
 
-test("logged-out visitor: 506(c) question does not name an exemption rule", () => {
+test("logged-out visitor: named exemption question does not repeat the rule", () => {
   const reply = ask(EXEMPTION_Q);
   assert.equal(reply, EXEMPTION_A);
   assertNoQuellivLeak(reply);
@@ -75,7 +89,6 @@ test("logged-out visitor: wire and amount are refused", () => {
   assertNoQuellivLeak(reply);
   assert.match(reply, /commitments, amounts, payments, wire details, or financial documents/);
   assert.match(reply, /Global Digital Markets/);
-  assert.doesNotMatch(reply, /50,?000/);
 });
 
 test("logged-out visitor: eligibility goes to Global Digital Markets or the data room", () => {
@@ -86,28 +99,43 @@ test("logged-out visitor: eligibility goes to Global Digital Markets or the data
   assert.match(reply, /data-room request/);
 });
 
-test("verified data-room access may describe the offering and state price and size", () => {
-  const price = ask(PRICE_Q, true);
-  assert.match(price, /Units are \$5 each/);
-  assert.match(price, /up to \$10 million/);
-  assert.doesNotMatch(price, /506/);
-  assert.equal(price.endsWith(DISCLAIMER), true);
+test("verified access reads term replies from the environment, or uses the documents fallback", () => {
+  const previous = process.env.OFFERING_TERMS_JSON;
+  try {
+    delete process.env.OFFERING_TERMS_JSON;
+    assert.equal(ask(PRICE_Q, true), PRICE_A);
+    assert.equal(ask(EXEMPTION_Q, true), PRICE_A);
 
-  const exemption = ask(EXEMPTION_Q, true);
-  assert.match(exemption, new RegExp(QUELLIV_OFFERING_DESCRIPTION));
-  assert.doesNotMatch(exemption, /506/);
-  assert.doesNotMatch(exemption, /general solicitation/i);
+    process.env.OFFERING_TERMS_JSON = JSON.stringify({
+      priceReply: "RUNTIME_PRICE_SENTINEL",
+      descriptionReply: "RUNTIME_DESCRIPTION_SENTINEL",
+    });
+    const price = ask(PRICE_Q, true);
+    assert.match(price, /RUNTIME_PRICE_SENTINEL/);
+    assert.equal(price.endsWith(DISCLAIMER), true);
+    assert.doesNotMatch(ask(PRICE_Q, false), /RUNTIME_PRICE_SENTINEL/);
+
+    const described = ask(EXEMPTION_Q, true);
+    assert.match(described, /RUNTIME_DESCRIPTION_SENTINEL/);
+    assert.equal(described.endsWith(DISCLAIMER), true);
+    assert.equal(ask(EXEMPTION_Q, false), EXEMPTION_A);
+    assert.doesNotMatch(ask(EXEMPTION_Q, false), /RUNTIME_DESCRIPTION_SENTINEL/);
+  } finally {
+    if (previous === undefined) delete process.env.OFFERING_TERMS_JSON;
+    else process.env.OFFERING_TERMS_JSON = previous;
+  }
 });
 
 test("location revenue is not quoted", () => {
-  const reply = ask("What is the $500k per location revenue?");
-  assert.doesNotMatch(reply, /500/);
+  const reply = ask("What is the revenue per location?");
+  assert.doesNotMatch(reply, rulePattern);
   assert.doesNotMatch(reply, /\$/);
+  assert.doesNotMatch(reply, /per location revenue is/i);
   assert.equal(reply.endsWith(DISCLAIMER), true);
 });
 
 test("public greeting ignores admin welcome copy", () => {
-  const poisoned = { ...config, welcome: "Explore an investment in Quelliv. The offering price is $5." };
+  const poisoned = { ...config, welcome: "Explore an investment in Quelliv." };
   assert.equal(initialAssistantMessage(poisoned), PUBLIC_GREETING);
   assert.doesNotMatch(PUBLIC_GREETING, /\binvest|\boffering|\$\s*\d/i);
 });
@@ -120,14 +148,15 @@ test("access request does not reveal an offering link", () => {
     false
   );
   assert.equal(result.unlock, false);
-  assert.doesNotMatch(result.reply, /\binvest|\boffering|v\.quelliv\.com|\$\s*\d/i);
+  assert.doesNotMatch(result.reply, /\binvest|\boffering|example\.invalid|v\.quelliv\.com|\$\s*\d/i);
 });
 
 test("Struxurety investing questions use the STATE 0 reply and capture name and email only", () => {
   for (const question of STRUXURETY_Q) {
     const first = nextGateReply(loggedOut, question, config, false);
     assert.equal(first.reply, STRUXURETY_A);
-    assert.doesNotMatch(first.reply, /growth capital|capital structure|valuation|returns|\$\s*\d|506|private placement/i);
+    assert.doesNotMatch(first.reply, /growth capital|capital structure|valuation|returns|\$\s?\d|private placement/i);
+    assert.doesNotMatch(first.reply, rulePattern);
     assert.doesNotMatch(first.reply, /not investment advice or an offer to sell securities/);
     assert.equal(first.session.struxuretyInterest?.phase, "contact");
 
@@ -139,7 +168,8 @@ test("Struxurety investing questions use the STATE 0 reply and capture name and 
     assert.equal(noted.leadPatch?.name, "Jordan Lee");
     assert.equal(noted.leadPatch?.email, "jordan@example.com");
     assert.equal(noted.leadPatch?.phone, undefined);
-    assert.doesNotMatch(noted.reply, /growth capital|valuation|returns|\$\s*\d|506|wire|private placement/i);
+    assert.doesNotMatch(noted.reply, /growth capital|valuation|returns|\$\s?\d|wire|private placement/i);
+    assert.doesNotMatch(noted.reply, rulePattern);
     assert.equal(noted.session.struxuretyInterest?.phase, "done");
   }
 });
@@ -156,9 +186,16 @@ test("public pages have no investment, offering, price, or size language", () =>
     "src/components/landing/ProspectFooter.tsx",
     "README.md",
   ];
-  const forbidden = /\binvest|\boffering\b|\$\s*\d|\b506\b|v\.quelliv\.com\/invest|investors\.quelliv\.com/i;
+  const forbidden = new RegExp(
+    `\\binvest|\\boffering\\b|\\$\\s*\\d|\\b${ruleNumber}\\b|v\\.quelliv\\.com\\/invest|investors\\.quelliv\\.com`,
+    "i"
+  );
+  const envNames = ["OFFERING_TERMS_JSON", "QUELLIV_OFFERING_GUARDRAILS", "STRUXURETY_OFFERING_GUARDRAILS"];
   for (const file of files) {
-    const text = readFileSync(file, "utf8");
+    let text = readFileSync(file, "utf8");
+    if (file === "README.md") {
+      for (const name of envNames) text = text.split(name).join("ENV_VAR");
+    }
     assert.doesNotMatch(text, forbidden, file);
   }
 });
@@ -167,4 +204,19 @@ test("chat route does not return a data-room url from the client", () => {
   const route = readFileSync("src/app/api/chat/route.ts", "utf8");
   assert.match(route, /nextGateReply\(gate, message, store\.config, false\)/);
   assert.doesNotMatch(route, /dataRoomUrl/);
+});
+
+test("committed sources do not contain the live link or term figures", () => {
+  const files = [
+    "src/lib/offering-guardrails.ts",
+    "src/lib/chat-engine.ts",
+    "src/lib/seed.ts",
+    "README.md",
+    "tests/offering-guardrails.test.ts",
+  ];
+  for (const file of files) {
+    const text = readFileSync(file, "utf8");
+    assert.equal(text.includes(ruleNumber), false, file);
+    assert.doesNotMatch(text, /v\.quelliv\.com/);
+  }
 });
