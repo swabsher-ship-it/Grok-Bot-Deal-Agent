@@ -2,20 +2,9 @@
 
 Next.js App Router + TypeScript + Tailwind. Org **Struxurety**, campaign **Quelliv**, agent **Alex**.
 
-**Ask Alex** is Quelliv's **in-room assistant and Data Room gatekeeper** (replaces legacy **Ask Vox** labeling). After consents and identity, Alex unlocks the live Quelliv Investor Preview / Data Room (video investor + Access Data Room / Book Conversation), then stays available for packet orientation.
+**Ask Alex** takes a request for access and answers general questions about Quelliv. The public site does not link into a private round. Admin remains a separate dashboard.
 
-Prospect UI matches live **https://investors.quelliv.com/** (white Montserrat landing, Learn More CTA, AI consent gate, floating chat). Admin remains a separate dark dashboard.
-
-## Dual-link framing
-
-| Role | URL |
-|------|-----|
-| **Alex gate / Ask Alex** (this app) | Deployed Deal Agent landing + `/start` chat gate |
-| **Quelliv Investor Preview / Data Room** (unlock target) | https://v.quelliv.com/invest/989178b76cc2f3f0d734914f |
-
-Canonical `config.dataRoomUrl` (seed default): `https://v.quelliv.com/invest/989178b76cc2f3f0d734914f`
-
-Landing CTA: **Learn More** (opens Alex consent → chat)
+Landing CTA: **Request access** (opens Alex consent, then chat)
 
 ## Quick start
 Use package.json scripts: install, build, then dev. Open localhost:3000
@@ -66,5 +55,5 @@ Public: / /start /terms /privacy
 Admin: /admin /admin/leads /admin/conversations /admin/logs /admin/users /admin/config /admin/voice
 APIs: /api/pageview /api/events /api/chat/start /api/chat /api/consent /api/admin/* /api/admin/export/leads /api/admin/export/events
 
-No inventing investment returns. Do not push remotes without auth.
+Do not push remotes without auth.
 Target repo: Grok-Bot-Deal-Agent under swabsher-ship-it.

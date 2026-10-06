@@ -2,12 +2,13 @@
   "name": "grok-bot-deal-agent",
   "version": "2.0.0",
   "private": true,
-  "description": "Struxurety DealAgent v2 — Quelliv Ask Alex (in-room assistant + Data Room gatekeeper)",
+  "description": "Struxurety DealAgent v2 — Quelliv access request assistant",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "test": "tsx --test tests/*.test.ts",
     "seed": "tsx scripts/seed.ts"
   },
   "dependencies": {
@@ -30,6 +31,7 @@
     "autoprefixer": "^10.4.20",
     "postcss": "^8.4.49",
     "tailwindcss": "^3.4.17",
+    "tsx": "^4.23.15",
     "typescript": "^5.7.2"
   }
 }

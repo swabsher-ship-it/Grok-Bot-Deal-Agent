@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
             confidentialityAck: false,
             electronicDeliveryAck: true,
             aiDisclosureAck: true,
-            securitiesAck: true,
+            securitiesAck: false,
             smsConsent: false,
             consentedAt: createdAt,
           }

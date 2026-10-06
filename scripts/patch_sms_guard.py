@@ -4,9 +4,9 @@ from pathlib import Path
 p = Path("src/lib/chat-engine.ts")
 t = p.read_text()
 old = '''        reply:
-          "Thanks. Do you consent to SMS communications about your Quelliv investor access? (A2P verification may limit messaging.) Reply YES or NO.",'''
+          "Thanks. Do you consent to future text messages about your access request? Consent is recorded only, and outbound texts stay off for now. Reply YES or NO.",'''
 new = '''        reply:
-          "Thanks. Do you consent to future SMS about your Quelliv investor access? (Consent is recorded only — outbound SMS is DISABLED until our A2P campaign is VERIFIED.) Reply YES or NO.",'''
+          "Thanks. Do you consent to future text messages about your access request? Consent is recorded only, and outbound texts stay off for now. Reply YES or NO.",'''
 if old not in t:
     raise SystemExit("chat-engine sms prompt missing")
 p.write_text(t.replace(old, new, 1))

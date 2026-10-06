@@ -10,8 +10,8 @@ export default function PrivacyPage() {
         <h1 className="text-2xl font-semibold uppercase tracking-wide">Privacy Policy</h1>
         <p className="mt-6 text-sm font-light leading-relaxed text-quelliv-muted">
           Quelliv collects contact details and chat content you provide when using Alex so we can
-          respond to investor inquiries and deliver data-room access. We do not sell personal
-          information. Chat sessions may be logged for compliance and quality. Contact{" "}
+          respond to access requests. We do not sell personal information. Chat sessions may be
+          logged for quality. Contact{" "}
           <a href="mailto:scott.absher@quelliv.com" className="text-quelliv-cta underline">
             scott.absher@quelliv.com
           </a>{" "}

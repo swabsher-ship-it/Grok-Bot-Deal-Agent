@@ -39,9 +39,7 @@ const ChatWidget = forwardRef<ChatWidgetHandle, { floating?: boolean }>(
     const [input, setInput] = useState("");
     const [loading, setLoading] = useState(false);
     const [conversationId, setConversationId] = useState<string | null>(null);
-    const [leadId, setLeadId] = useState<string | null>(null);
     const [gate, setGate] = useState<GateSession>({ step: "interest" });
-    const [unlockedUrl, setUnlockedUrl] = useState<string | null>(null);
     const bottomRef = useRef<HTMLDivElement>(null);
     const launcherTracked = useRef(false);
 
@@ -97,7 +95,6 @@ const ChatWidget = forwardRef<ChatWidgetHandle, { floating?: boolean }>(
             }
           }
           setConversationId(data.conversationId);
-          setLeadId(data.leadId || null);
           setMessages(data.messages || []);
           setGate(data.gate || { step: "interest" });
           setPhase("chat");
@@ -133,7 +130,6 @@ const ChatWidget = forwardRef<ChatWidgetHandle, { floating?: boolean }>(
         if (data.ok) {
           setMessages(data.messages || []);
           setGate(data.gate || gate);
-          if (data.unlocked && data.dataRoomUrl) setUnlockedUrl(data.dataRoomUrl);
         }
       } finally {
         setLoading(false);
@@ -177,9 +173,8 @@ const ChatWidget = forwardRef<ChatWidgetHandle, { floating?: boolean }>(
               Chat with Quelliv&apos;s AI Assistant
             </h3>
             <p className="text-sm font-light leading-relaxed text-quelliv-muted">
-              This is an AI-powered assistant. By continuing, you consent to receive AI-assisted
-              communications about investment opportunities from Quelliv. This is not financial
-              advice. All investments carry risk.
+              This is an AI assistant. By continuing, you agree that this chat may be logged.
+              Please don&apos;t send payment details or financial documents here.
             </p>
             <label className="flex cursor-pointer items-start gap-3 rounded-xl bg-quelliv-section/80 px-3 py-3 text-left text-[13px] font-light leading-snug text-quelliv-muted">
               <input
@@ -189,8 +184,7 @@ const ChatWidget = forwardRef<ChatWidgetHandle, { floating?: boolean }>(
                 className="mt-0.5 h-4 w-4 shrink-0 rounded border-quelliv-border accent-quelliv-cta"
               />
               <span>
-                I consent to receive AI-assisted communications about investment opportunities from
-                Quelliv. By continuing, I agree to the{" "}
+                I agree to chat with Quelliv&apos;s AI assistant. By continuing, I agree to the{" "}
                 <Link href="/terms" className="font-medium text-quelliv-cta underline">
                   Terms of Service
                 </Link>{" "}
@@ -243,23 +237,6 @@ const ChatWidget = forwardRef<ChatWidgetHandle, { floating?: boolean }>(
                   </div>
                 </div>
               ))}
-              {unlockedUrl && (
-                <a
-                  href={unlockedUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  onClick={() =>
-                    trackClient({
-                      type: "data_room_click",
-                      leadId: leadId || undefined,
-                      conversationId: conversationId || undefined,
-                    })
-                  }
-                  className="ml-9 block rounded-xl border border-quelliv-cta/40 bg-quelliv-cta/10 px-3 py-2.5 text-sm font-medium text-quelliv-navy hover:bg-quelliv-cta/15"
-                >
-                  Open Quelliv Investor Preview / Data Room →
-                </a>
-              )}
               <div ref={bottomRef} />
             </div>
             <div className="border-t border-quelliv-border p-3">

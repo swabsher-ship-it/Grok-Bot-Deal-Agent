@@ -1,4 +1,9 @@
 import type { CampaignConfig, ConsentRecord, Lead, LeadState } from "./types";
+import {
+  STRUXURETY_INVESTING_REPLY,
+  isStruxuretyInvestingQuestion,
+  quellivOfferingReply,
+} from "./offering-guardrails";
 
 export type GateStep =
   | "consent"
@@ -11,6 +16,12 @@ export type GateStep =
   | "unlocked"
   | "chat";
 
+export interface StruxuretyInterest {
+  phase: "contact" | "email" | "done";
+  name?: string;
+  email?: string;
+}
+
 export interface GateSession {
   step: GateStep;
   name?: string;
@@ -20,43 +31,132 @@ export interface GateSession {
   smsConsent?: boolean;
   leadId?: string;
   unlocked?: boolean;
+  /** STATE 0 name-and-email capture. Not a Quelliv data-room login. */
+  struxuretyInterest?: StruxuretyInterest;
 }
 
-export function initialAssistantMessage(config: CampaignConfig): string {
-  return (
-    config.welcome ||
-    `Hi there! I'm ${config.agentName}, a friendly AI assistant from Quelliv. Thanks for your interest in learning more about us! I'd love to help you learn more about the opportunity and get you access to our investor materials. No pressure at all — are you interested in learning more?`
-  );
+/** Public greeting. Ignores config.welcome so admin copy cannot pitch an offering. */
+export const PUBLIC_GREETING =
+  "Hi, I'm Alex with Quelliv. I can take a request for access or answer a general question about the company. What would you like to do?";
+
+export function initialAssistantMessage(_config: CampaignConfig): string {
+  return PUBLIC_GREETING;
 }
 
 export function consentPrompt(): string {
   return [
-    "Please review and accept the following acknowledgments (placeholder copy — [GATED — counsel]):",
+    "Before we start:",
     "",
-    "1. Accredited investor / suitability acknowledgment — [GATED — counsel]",
-    "2. Confidentiality / non-disclosure of data-room materials — [GATED — counsel]",
-    "3. Electronic delivery & communications consent — [GATED — counsel]",
-    "4. Recording / AI-assistant disclosure (chat may be logged; not investment advice) — [GATED — counsel]",
-    "5. Securities disclaimer acknowledgment — [GATED — counsel]",
+    "1. This chat is with an AI assistant and may be logged.",
+    "2. Please don't send payment details or financial documents here.",
     "",
-    "Reply YES to accept all and start, or ask a question.",
+    "Reply YES to continue, or ask a question.",
   ].join("\n");
+}
+
+const EMAIL_RE = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i;
+
+function extractEmail(text: string): string | null {
+  const match = text.match(EMAIL_RE);
+  return match ? match[0] : null;
+}
+
+function extractName(text: string, email: string | null): string | null {
+  const stripped = email ? text.replace(email, " ") : text;
+  const name = stripped.replace(/[^A-Za-z\s.'-]/g, " ").replace(/\s+/g, " ").trim();
+  if (name.length < 2) return null;
+  if (/\b(invest|wire|return|valuation|capital|offering|price|struxurety|quelliv)\b/i.test(name)) return null;
+  return name;
+}
+
+function struxuretyAsk(session: GateSession, extra?: string) {
+  const reply = extra ? `${STRUXURETY_INVESTING_REPLY} ${extra}` : STRUXURETY_INVESTING_REPLY;
+  return { reply, session };
+}
+
+function handleStruxurety(
+  session: GateSession,
+  text: string,
+  lower: string
+): { reply: string; session: GateSession; leadPatch?: Partial<Lead> } | null {
+  const capture = session.struxuretyInterest;
+  const asking = isStruxuretyInvestingQuestion(lower);
+
+  if (!capture && !asking) return null;
+
+  if (capture?.phase === "done") {
+    if (asking) return struxuretyAsk(session);
+    return null;
+  }
+
+  if (!capture) {
+    return struxuretyAsk(
+      { ...session, struxuretyInterest: { phase: "contact" } },
+      "Please send your name and email."
+    );
+  }
+
+  const email = extractEmail(text);
+  const name = extractName(text, email) || capture.name;
+
+  if (email && name) {
+    const next: GateSession = {
+      ...session,
+      name,
+      email,
+      struxuretyInterest: { phase: "done", name, email },
+    };
+    return {
+      reply: `Thanks, ${name}. I've noted your interest and Scott's team will follow up at ${email}.`,
+      session: next,
+      leadPatch: { name, email, status: "Info Collected", state: "Collect Email" },
+    };
+  }
+
+  if (name && !email) {
+    const next: GateSession = {
+      ...session,
+      name,
+      struxuretyInterest: { phase: "email", name },
+    };
+    return {
+      reply: "Thanks. What email should Scott's team use?",
+      session: next,
+      leadPatch: { name, state: "Collect Email" },
+    };
+  }
+
+  if (email && !name) {
+    return {
+      reply: "Thanks. What name should I note?",
+      session: {
+        ...session,
+        email,
+        struxuretyInterest: { phase: "contact", email },
+      },
+      leadPatch: { email, state: "Collect Name" },
+    };
+  }
+
+  return struxuretyAsk(session, "Please send your name and email only.");
 }
 
 export function nextGateReply(
   session: GateSession,
   userText: string,
-  config: CampaignConfig
+  config: CampaignConfig,
+  hasDataRoomAccess = false
 ): { reply: string; session: GateSession; unlock?: boolean; leadPatch?: Partial<Lead> } {
   const text = userText.trim();
   const lower = text.toLowerCase();
 
-  if (looksLikeSecuritiesAdvice(lower)) {
-    return {
-      reply: `I can't provide personalized investment advice, returns, valuations, or allocation guidance. Please book time with Scott Absher or Mike Keyes (${config.escalation.email}). I can still help you unlock the Quelliv Investor Preview / Data Room and orient you to the document packet.`,
-      session,
-    };
-  }
+  // Gate completion is not data-room login. Price and size stay off unless a
+  // caller passes a separately verified flag. The public API never does.
+  const struxurety = handleStruxurety(session, text, lower);
+  if (struxurety) return struxurety;
+
+  const offeringReply = quellivOfferingReply(lower, hasDataRoomAccess);
+  if (offeringReply) return { reply: offeringReply, session };
 
   switch (session.step) {
     case "interest": {
@@ -76,13 +176,13 @@ export function nextGateReply(
       }
       if (text.length >= 2 && text.split(" ").length >= 2 && !lower.includes("?")) {
         return {
-          reply: `Thanks, ${text.split(" ")[0]}. What's the best email for your Quelliv Investor Preview / Data Room access link?`,
+          reply: `Thanks, ${text.split(" ")[0]}. What's the best email for your access request?`,
           session: { ...session, step: "email", name: text },
           leadPatch: { name: text, state: "Collect Email" as LeadState, status: "Engaged" },
         };
       }
       return {
-        reply: "No pressure at all. If you'd like to explore Quelliv's investor materials, just say yes and I'll get you set up. What's on your mind?",
+        reply: "If you'd like to request access, say yes and I'll take your name and email. What can I help with?",
         session,
       };
     }
@@ -92,11 +192,11 @@ export function nextGateReply(
           ...session,
           step: "name",
           consents: {
-            accreditedAck: true,
+            accreditedAck: false,
             confidentialityAck: true,
             electronicDeliveryAck: true,
             aiDisclosureAck: true,
-            securitiesAck: true,
+            securitiesAck: false,
             smsConsent: false,
             consentedAt: new Date().toISOString(),
           },
@@ -108,16 +208,16 @@ export function nextGateReply(
         };
       }
       return {
-        reply: "I need your acceptance of the acknowledgments before we continue. Reply YES when ready, or ask me about the process.",
+        reply: "Please reply YES to continue, or ask a question.",
         session,
       };
     }
     case "name": {
       if (text.length < 2) {
-        return { reply: "Please share your full name so I can set up your access.", session };
+        return { reply: "Please share your full name so I can set up your access request.", session };
       }
       return {
-        reply: `Thanks, ${text.split(" ")[0]}. What's the best email for your Quelliv Investor Preview / Data Room access link?`,
+        reply: `Thanks, ${text.split(" ")[0]}. What's the best email for your access request?`,
         session: { ...session, step: "email", name: text },
         leadPatch: { name: text, state: "Collect Email" },
       };
@@ -127,7 +227,7 @@ export function nextGateReply(
         return { reply: "That doesn't look like an email address. Please enter a valid email.", session };
       }
       return {
-        reply: "Got it. What's your mobile phone number? (Include country code if outside the US.)",
+        reply: "Got it. What's your mobile phone number? (Include a country code if you are outside the US.)",
         session: { ...session, step: "phone", email: text },
         leadPatch: { email: text, state: "Collect Phone" },
       };
@@ -139,7 +239,7 @@ export function nextGateReply(
       }
       return {
         reply:
-          "Thanks. Do you consent to future SMS about your Quelliv investor access? (Consent is recorded only — outbound SMS is DISABLED until our A2P campaign is VERIFIED.) Reply YES or NO.",
+          "Thanks. Do you consent to future text messages about your access request? Consent is recorded only, and outbound texts stay off for now. Reply YES or NO.",
         session: { ...session, step: "sms", phone: text },
         leadPatch: { phone: text, state: "Confirm Information" },
       };
@@ -151,9 +251,9 @@ export function nextGateReply(
         `• Name: ${session.name}`,
         `• Email: ${session.email}`,
         `• Phone: ${session.phone}`,
-        `• SMS consent: ${sms ? "Yes" : "No"}`,
+        `• Text-message consent: ${sms ? "Yes" : "No"}`,
         "",
-        "Reply CONFIRM to unlock the Quelliv Investor Preview / Data Room, or tell me what to correct.",
+        "Reply CONFIRM to submit your access request, or tell me what to correct.",
       ].join("\n");
       return {
         reply: summary,
@@ -167,26 +267,20 @@ export function nextGateReply(
     }
     case "confirm": {
       if (lower.includes("confirm") || lower === "yes") {
-        const unlocked: GateSession = { ...session, step: "unlocked", unlocked: true };
         return {
-          reply: [
-            `You're all set. I'm unlocking the Quelliv Investor Preview / Data Room now.`,
-            "",
-            `Investor Preview / Data Room: ${config.dataRoomUrl}`,
-            "",
-            `You can ask me about the deck, model, PPM, subscription agreement, or recommended review order. I will not invent terms, returns, or valuations — those live in the official documents. For personalized questions, contact Scott Absher / Mike Keyes.`,
-          ].join("\n"),
-          session: unlocked,
-          unlock: true,
+          reply:
+            "Your access request is recorded. A teammate will follow up by email. I can't take a commitment or send documents in this chat.",
+          session: { ...session, step: "chat", unlocked: false },
+          unlock: false,
           leadPatch: {
-            status: "Docs Sent",
-            state: "Send Documents",
+            status: "Info Collected",
+            state: "Confirm Information",
             consents: {
-              accreditedAck: true,
+              accreditedAck: false,
               confidentialityAck: true,
               electronicDeliveryAck: true,
               aiDisclosureAck: true,
-              securitiesAck: true,
+              securitiesAck: false,
               smsConsent: !!session.smsConsent,
               consentedAt: session.consents?.consentedAt || new Date().toISOString(),
             },
@@ -203,7 +297,7 @@ export function nextGateReply(
         return { reply: "Okay — what's the correct phone?", session: { ...session, step: "phone" } };
       }
       return {
-        reply: "Reply CONFIRM to unlock, or say name/email/phone to correct a field.",
+        reply: "Reply CONFIRM to submit your access request, or say name, email, or phone to correct a field.",
         session,
       };
     }
@@ -218,40 +312,12 @@ export function nextGateReply(
   }
 }
 
-function looksLikeSecuritiesAdvice(lower: string): boolean {
-  const triggers = [
-    "what will i make",
-    "guaranteed",
-    "return",
-    "roi",
-    "valuation",
-    "how much can i",
-    "wire instruction",
-    "wiring",
-    "allocation",
-    "share price",
-  ];
-  return triggers.some((t) => lower.includes(t));
-}
-
 function answerKnowledge(lower: string, config: CampaignConfig): string {
-  if (lower.includes("ppm")) {
-    return "The PPM (Private Placement Memorandum) is the primary disclosure document covering risks and terms. I can point you to it in the data room — I don't paraphrase offering terms as advice. Read the PPM directly for anything binding.";
-  }
-  if (lower.includes("subscription") || lower.includes("sub agreement")) {
-    return "The Subscription Agreement is the instrument investors execute to participate (accredited path). Recommended order is typically deck → model overview → PPM → subscription. Exact signing steps should follow the packet instructions; escalate edge cases to Scott / Mike.";
-  }
-  if (lower.includes("deck") || lower.includes("pitch")) {
-    return "The investor deck covers Quelliv's narrative and is informational — it is not a subscription instrument. After the deck, many investors review the model for diligence orientation, then the PPM.";
-  }
-  if (lower.includes("model") || lower.includes("financial")) {
-    return "The financial model is for diligence orientation only. I won't invent or guarantee returns from it. Treat figures as illustrative and defer to the PPM for offering terms.";
-  }
-  if (lower.includes("room") || lower.includes("link") || lower.includes("access")) {
-    return `Your Quelliv Investor Preview / Data Room link: ${config.dataRoomUrl}. Ask me about any document category in the packet.`;
+  if (/\b(what is quelliv|who is quelliv|about the company|what do you do)\b/.test(lower)) {
+    return "Quelliv is the company this assistant represents. A public overview is on quelliv.com. I can also take a request for access.";
   }
   if (lower.includes("book") || lower.includes("scott") || lower.includes("mike") || lower.includes("meeting")) {
-    return `For meetings with Scott Absher or Mike Keyes, use the book path on Quelliv (meet.quelliv.com) or email ${config.escalation.email}.`;
+    return `For a meeting, use meet.quelliv.com or email ${config.escalation.email}.`;
   }
-  return `I'm ${config.agentName} — Ask Alex, Quelliv's in-room assistant and Data Room gatekeeper. I can help with Investor Preview / Data Room orientation (deck, model, PPM, subscription, warrants, notices) and process questions. I don't invent investment returns or terms. What would you like to know?`;
+  return `I'm ${config.agentName} with Quelliv. I can take a request for access or help with a general question. What would you like to do?`;
 }
